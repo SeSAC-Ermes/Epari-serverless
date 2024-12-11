@@ -1,4 +1,3 @@
-// dashboard-admin-courses.js
 const chartTheme = {
     color: [
         '#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de',
@@ -114,6 +113,8 @@ async function initDashboard() {
     document.querySelectorAll('.chart').forEach(el => {
         el.classList.remove('loading');
     });
+
+    console.log(data);
 
     updateBasicMetrics(data);
 

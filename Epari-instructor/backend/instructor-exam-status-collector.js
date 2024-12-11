@@ -7,9 +7,16 @@ import { existsSync } from 'fs';
 
 dotenv.config();
 
+/**
+ * 데이터 생성 및 관리
+ * jsons 폴더에 날자별 json 파일 저장
+ */
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+/**
+ * 랜덤 데이터 생성
+ */
 function generateRandomStatistics() {
   // 30~50명 사이의 랜덤한 총 학생 수 생성
   const totalStudents = Math.floor(Math.random() * (50 - 30 + 1)) + 30;
@@ -37,6 +44,13 @@ function generateRandomStatistics() {
   };
 }
 
+/**
+ * 현재 날자로 파일명 생성
+ * generateRandomStatistics 호출하여 랜덤 데이터 생성
+ * 데이터 객체 구조 생성
+ * 파일 저장 위치 설정
+ * 기존 데이터가 있으면 히스토리에 추가
+ */
 async function collectExamStatistics() {
   const now = new Date();
   const fileName = `statistics-instructor-exam-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}.json`;

@@ -1,4 +1,6 @@
-// dashboard-instructor-courses.js
+/**
+ * 데이터를 차트로 시각화 및 대시보드 동작 제어
+ */
 const chartTheme = {
     color: [
         '#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de',
@@ -12,6 +14,10 @@ const chartTheme = {
 
 echarts.registerTheme('custom', chartTheme);
 
+/**
+ * 현재 날짜로 json 파일 경로 생성
+ * fetch로 데이터 로드
+ */
 async function loadExamData() {
     try {
         const now = new Date();
@@ -26,45 +32,55 @@ async function loadExamData() {
     }
 }
 
+/**
+ * 총 학생 수 업데이터
+ */
 function updateBasicMetrics(data) {
-    const totalStudents = data.admin_statistics.total_students;
-    const submissionRate = data.admin_statistics.exam_details.submission_rate;
+    const totalStudents = data.instructor_statistics.total_students;
     document.getElementById('totalStudents').textContent = totalStudents.toLocaleString();
-    document.getElementById('submissionRate').textContent = submissionRate.toFixed(1);
 }
 
+/**
+ * 차트 데이터 포맷팅 및 렌더링
+ */
 function renderExamStatusChart(data) {
     const chartDom = document.getElementById('examStatusChart');
     const chart = echarts.init(chartDom, 'custom');
 
-    const examData = data.admin_statistics.exam_status.map(status => ({
+    const examData = data.instructor_statistics.exam_status.map(status => ({
         value: status.count,
         name: status.status
     }));
 
+    const { start_angle, end_angle, inner_radius, outer_radius } = data.instructor_statistics.exam_details.chart_options;
+
     const option = {
+        title: {
+            text: data.instructor_statistics.exam_details.title,
+            top: '0%',
+            left: 'center'
+        },
         tooltip: {
             trigger: 'item',
             formatter: '{b}: {c}명 ({d}%)'
         },
         legend: {
-            orient: 'vertical',
-            left: '0%',
-            top: 'center'
+            orient: 'horizontal',
+            top: '8%',
+            left: 'center'
         },
         series: [
             {
                 name: '시험 응시 현황',
                 type: 'pie',
-                radius: ['40%', '70%'],
-                startAngle: 180,
-                endAngle: 360,
-                center: ['50%', '50%'],
+                radius: [inner_radius, outer_radius],
+                startAngle: start_angle,
+                endAngle: end_angle,
+                center: ['50%', '60%'],
                 data: examData,
                 label: {
                     show: true,
-                    formatter: '{b}: {c}명\n({d}%)',
-                    position: 'outside'
+                    formatter: '{b}: {c}명'
                 },
                 emphasis: {
                     itemStyle: {
@@ -72,11 +88,6 @@ function renderExamStatusChart(data) {
                         shadowOffsetX: 0,
                         shadowColor: 'rgba(0, 0, 0, 0.5)'
                     }
-                },
-                itemStyle: {
-                    borderRadius: 10,
-                    borderColor: '#fff',
-                    borderWidth: 2
                 }
             }
         ]
