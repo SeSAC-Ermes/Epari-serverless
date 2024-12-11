@@ -11,13 +11,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 function generateRandomStatistics() {
-  // 30~50명 사이의 랜덤한 총 학생 수 생성
   const totalStudents = Math.floor(Math.random() * (50 - 30 + 1)) + 30;
-
-  // 60%~100% 사이의 랜덤한 응시율 생성
   const submissionRate = Math.floor(Math.random() * (100 - 60 + 1)) + 60;
-
-  // 응시 학생 수 계산 (응시율에 따른 학생 수)
   const submittedCount = Math.round((totalStudents * submissionRate) / 100);
   const notSubmittedCount = totalStudents - submittedCount;
 
@@ -41,36 +36,20 @@ async function collectExamStatistics() {
   const now = new Date();
   const fileName = `statistics-instructor-exam-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}.json`;
 
-  // 랜덤 통계 생성
   const stats = generateRandomStatistics();
 
   const examData = {
-    date: now.toISOString(),
-    timestamp: {
-      created_at: now.toISOString(),
-      period: { // TODO: 추후 확인
-        start: new Date(now.setHours(0, 0, 0, 0)).toISOString(),
-        end: new Date(now.setHours(23, 59, 59, 999)).toISOString()
-      },
-      interval: "hourly",
-      timezone: "Asia/Seoul"
-    },
-    instructor_statistics: { // TODO: 추후 네이밍 개선
+    statistics_list: [] // 통계 데이터 배열
+  };
+
+  // 새로운 통계 데이터
+  const newStatistics = {
+    timestamp: now.toISOString(),
+    statistics: {
       total_students: stats.totalStudents,
       exam_status: stats.examStatus,
-      exam_details: {
-        title: "2024년 11월 시험",
-        date: "2024-11", // TODO: 추후 개선
-        submission_rate: stats.submissionRate,
-        chart_options: {
-          start_angle: 180,
-          end_angle: 360,
-          inner_radius: "40%", // TODO: 오찬근
-          outer_radius: "70%"
-        }
-      }
-    },
-    historical_data: []
+      submission_rate: stats.submissionRate
+    }
   };
 
   try {
@@ -79,12 +58,12 @@ async function collectExamStatistics() {
 
     const existingData = await loadExistingData(filePath);
     if (existingData) {
-      existingData.historical_data.push({
-        date: now.toISOString(),
-        data: examData
-      });
+      // 기존 데이터가 있으면 새 통계를 추가
+      existingData.statistics_list.push(newStatistics);
       await writeFile(filePath, JSON.stringify(existingData, null, 2));
     } else {
+      // 새 파일 생성
+      examData.statistics_list.push(newStatistics);
       await writeFile(filePath, JSON.stringify(examData, null, 2));
     }
 
@@ -109,9 +88,9 @@ async function loadExistingData(filePath) {
   return null;
 }
 
-// 1시간마다 실행
-const ONE_HOUR = 1000 * 10;
-setInterval(collectExamStatistics, ONE_HOUR);
+// 10초마다 실행 (테스트용)
+const INTERVAL = 1000 * 10;
+setInterval(collectExamStatistics, INTERVAL);
 
 // 초기 실행
 collectExamStatistics();
