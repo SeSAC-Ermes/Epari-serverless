@@ -1,9 +1,9 @@
 {
-  "name": "admin-dashboard",
+  "name": "instructor-dashboard",
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "start": "node backend/admin-courses-collector.js",
+    "start": "node backend/instructor-exam-status-collector.js",
     "start:dashboard": "npx http-server . -p 3000"
   },
 
