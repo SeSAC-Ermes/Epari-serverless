@@ -3,15 +3,14 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "start": "node backend/admin-courses-collector.mjs",
+    "start": "node backend/admin-collectors.mjs",
     "start:dashboard": "npx http-server . -p 3000"
   },
-
   "dependencies": {
+    "ag-grid-community": "^32.3.3",
     "dotenv": "^16.3.1",
     "echarts": "^5.5.1"
   },
-
   "devDependencies": {
     "http-server": "^14.1.1"
   }
