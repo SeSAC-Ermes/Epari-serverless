@@ -122,3 +122,14 @@ tr:hover {
         grid-column: span 1;
     }
 }
+
+.ag-theme-alpine {
+    --ag-header-height: 40px;
+    --ag-header-foreground-color: var(--text-color);
+    --ag-header-background-color: var(--background-color);
+    --ag-header-cell-hover-background-color: var(--border-color);
+    --ag-header-cell-moving-background-color: var(--border-color);
+    height: 400px;
+    width: 100%;
+    margin-top: 16px;
+}
