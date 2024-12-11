@@ -33,23 +33,23 @@ async function collectCourseStatistics() {
       total_enrollment: 100,
       course_enrollments: [
         {
-          course_name: "자바 프로그래밍 기초",
+          course_name: "MSA 기반 자바 개발자",
           enrolled_count: 20
         },
         {
-          course_name: "웹 개발 실무",
+          course_name: "IOS 앱 개발자",
           enrolled_count: 40
         },
         {
-          course_name: "데이터베이스 입문",
+          course_name: "클라우드 SW엔지니어",
           enrolled_count: 10
         },
         {
-          course_name: "알고리즘의 이해",
+          course_name: "데이터 AI 개발자",
           enrolled_count: 20
         },
         {
-          course_name: "인공지능 개론",
+          course_name: "빅데이터 과정",
           enrolled_count: 10
         }
       ],
@@ -60,23 +60,23 @@ async function collectCourseStatistics() {
             total_users: 100,
             course_wise: [
               {
-                course_name: "자바 프로그래밍 기초",
+                course_name: "MSA 기반 자바 개발자",
                 enrolled_count: 20
               },
               {
-                course_name: "웹 개발 실무",
+                course_name: "IOS 앱 개발자",
                 enrolled_count: 40
               },
               {
-                course_name: "데이터베이스 입문",
+                course_name: "클라우드 SW엔지니어",
                 enrolled_count: 10
               },
               {
-                course_name: "알고리즘의 이해",
+                course_name: "데이터 AI 개발자",
                 enrolled_count: 20
               },
               {
-                course_name: "인공지능 개론",
+                course_name: "빅데이터 과정",
                 enrolled_count: 10
               }
             ]
