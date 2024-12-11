@@ -1,15 +1,13 @@
 ### General ###
 HELP.md
 
-### IntelliJ IDEA ###
-*.json
-
 # IDE 설정 파일
 *.iml
 .idea/
 
 # 의존성 디렉토리
 node_modules/
+jsons/
 
 # 환경 설정 파일
 .env
