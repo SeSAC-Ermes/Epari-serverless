@@ -9,6 +9,10 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+/**
+ * 사용현황
+ */
+
 async function loadExistingData(filePath) {
   try {
     if (existsSync(filePath)) {
@@ -127,7 +131,7 @@ async function collectFacilityStatistics() {
   }
 }
 
-const THIRTY_SECONDS = 30 * 1000;
+const THIRTY_SECONDS = 60 * 60 * 1000;
 setInterval(collectFacilityStatistics, THIRTY_SECONDS);
 
 await collectFacilityStatistics();
