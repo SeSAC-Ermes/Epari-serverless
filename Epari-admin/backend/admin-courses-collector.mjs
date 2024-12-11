@@ -135,7 +135,7 @@ async function loadExistingData(filePath) {
 }
 
 // 실행 로직
-const ONE_HOUR = 30 * 1000;
+const ONE_HOUR = 60 * 60 * 1000;
 setInterval(collectCourseStatistics, ONE_HOUR);
 
 await collectCourseStatistics();
