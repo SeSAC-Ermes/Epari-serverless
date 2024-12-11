@@ -12,20 +12,24 @@ const __dirname = dirname(__filename);
 
 async function collectCourseStatistics() {
   const now = new Date();
+  const startDate = new Date(now);
+  startDate.setHours(0,0,0,0);
+  const endDate = new Date(now);
+  endDate.setHours(23,59,59,999);
+
   const fileName = `statistics-admin-courses-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}.json`;
 
-  const dummyData = {
-    date: now.toISOString(),
+  const currentStats = {
     timestamp: {
       created_at: now.toISOString(),
       period: {
-        start: new Date(now.setHours(0,0,0,0)).toISOString(),
-        end: new Date(now.setHours(23,59,59,999)).toISOString()
+        start: startDate.toISOString(),
+        end: endDate.toISOString()
       },
       interval: "hourly",
       timezone: "Asia/Seoul"
     },
-    admin_statistics: {
+    course_statistics: {
       total_enrollment: 100,
       course_enrollments: [
         {
@@ -41,33 +45,75 @@ async function collectCourseStatistics() {
           enrolled_count: 10
         },
         {
-          course_name: "백엔드 알고리즘의 이해",
+          course_name: "알고리즘의 이해",
           enrolled_count: 20
         },
         {
           course_name: "인공지능 개론",
           enrolled_count: 10
         }
-      ]
+      ],
+      time_series_data: {
+        hourly_enrollments: [
+          {
+            timestamp: now.toISOString(),
+            total_users: 100,
+            course_wise: [
+              {
+                course_name: "자바 프로그래밍 기초",
+                enrolled_count: 20
+              },
+              {
+                course_name: "웹 개발 실무",
+                enrolled_count: 40
+              },
+              {
+                course_name: "데이터베이스 입문",
+                enrolled_count: 10
+              },
+              {
+                course_name: "알고리즘의 이해",
+                enrolled_count: 20
+              },
+              {
+                course_name: "인공지능 개론",
+                enrolled_count: 10
+              }
+            ]
+          }
+        ]
+      }
     },
     historical_data: []
   };
 
   try {
-    // ESM: Nullish 병합 연산자 (??) 사용
     const saveFolder = process.env.SAVEFOLDER ?? 'jsons';
     const filePath = join(__dirname, '..', saveFolder, fileName);
 
     const existingData = await loadExistingData(filePath);
     if (existingData) {
+      // 기존 데이터가 있으면 historical_data에 새로운 데이터 추가
       existingData.historical_data.push({
-        date: now.toISOString(),
-        data: dummyData
+        timestamp: {
+          created_at: now.toISOString(),
+          period: currentStats.timestamp.period
+        },
+        data: {
+          total_enrollment: currentStats.course_statistics.total_enrollment,
+          course_enrollments: currentStats.course_statistics.course_enrollments
+        }
       });
       await writeFile(filePath, JSON.stringify(existingData, null, 2));
     } else {
-      await writeFile(filePath, JSON.stringify(dummyData, null, 2));
+      // 파일이 없으면 현재 데이터로 새 파일 생성
+      const newData = {
+        ...currentStats,
+        historical_data: []  // 빈 historical_data 배열로 시작
+      };
+      await writeFile(filePath, JSON.stringify(newData, null, 2));
     }
+
 
     console.log(`통계가 성공적으로 저장되었습니다: ${filePath}`);
   } catch (error) {
@@ -75,6 +121,7 @@ async function collectCourseStatistics() {
   }
 }
 
+// 기존 데이터 로드 함수
 async function loadExistingData(filePath) {
   try {
     if (existsSync(filePath)) {
@@ -87,7 +134,8 @@ async function loadExistingData(filePath) {
   return null;
 }
 
-const ONE_HOUR = 360 * 60 * 1000;
+// 실행 로직
+const ONE_HOUR = 30 * 1000;
 setInterval(collectCourseStatistics, ONE_HOUR);
 
 await collectCourseStatistics();

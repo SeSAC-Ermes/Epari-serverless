@@ -26,7 +26,7 @@ export async function loadCourseData() {
 }
 
 export function updateBasicMetrics(data) {
-    const totalStudents = data.admin_statistics.total_enrollment;
+    const totalStudents = data.course_statistics.total_enrollment;
     document.getElementById('totalStudents').textContent = totalStudents.toLocaleString();
 }
 
@@ -34,7 +34,7 @@ export function renderCourseEnrollmentChart(data) {
     const chartDom = document.getElementById('courseEnrollmentChart');
     const chart = echarts.init(chartDom, 'custom');
 
-    const courseData = data.admin_statistics.course_enrollments.map(course => ({
+    const courseData = data.course_statistics.course_enrollments.map(course => ({
         value: course.enrolled_count,
         name: course.course_name
     }));

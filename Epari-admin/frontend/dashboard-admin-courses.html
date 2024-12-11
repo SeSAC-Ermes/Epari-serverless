@@ -3,35 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>관리자 대시보드 - 강의별 수강생 현황</title>
-
+    <title>관리자 대시보드</title>
     <!-- ECharts 라이브러리 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
-
     <!-- Custom CSS -->
     <link rel="stylesheet" href="dashboard-admin-courses.css">
 </head>
 <body>
 <div class="dashboard-container">
     <header class="header">
-        <h1>강의별 수강생 현황</h1>
+        <h1>관리자 대시보드</h1>
         <div class="period">2024-12-10 00:00 ~ 23:59</div>
-        <div class="current-users">
-            <span class="count" id="totalStudents">-</span>
-            <span class="unit">명</span>
-            <span class="time">현재 총 수강생</span>
-        </div>
     </header>
-
     <div class="grid-container">
         <div class="card wide">
             <h2>강의별 수강생 분포</h2>
+            <div class="current-users">
+                <span id="totalStudents" class="count">-</span>
+                <span class="unit">명</span>
+                <span class="time">현재 총 수강생</span>
+            </div>
             <div id="courseEnrollmentChart" class="chart"></div>
         </div>
     </div>
 </div>
-
 <!-- Custom JS -->
-<script type="module" src="dashboard-admin-courses.mjs"></script>  <!-- type="module" 추가 -->
+<script type="module" src="dashboard-admin-courses.mjs"></script>
 </body>
 </html>
