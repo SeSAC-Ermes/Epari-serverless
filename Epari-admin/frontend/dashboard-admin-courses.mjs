@@ -1,5 +1,4 @@
-// dashboard-admin-courses.js
-const chartTheme = {
+export const chartTheme = {
     color: [
         '#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de',
         '#3ba272', '#fc8452', '#9a60b4', '#ea7ccc'
@@ -12,11 +11,11 @@ const chartTheme = {
 
 echarts.registerTheme('custom', chartTheme);
 
-async function loadCourseData() {
+export async function loadCourseData() {
     try {
         const now = new Date();
         const yyyyMMdd = now.toISOString().slice(0, 10).replace(/-/g, '');
-        const filePath = `/jsons/statistics-admin-courses-${yyyyMMdd}.json`; // 날짜 기반 파일 이름
+        const filePath = `/jsons/statistics-admin-courses-${yyyyMMdd}.json`;
         const response = await fetch(filePath);
         const data = await response.json();
         return data;
@@ -26,13 +25,12 @@ async function loadCourseData() {
     }
 }
 
-
-function updateBasicMetrics(data) {
+export function updateBasicMetrics(data) {
     const totalStudents = data.admin_statistics.total_enrollment;
     document.getElementById('totalStudents').textContent = totalStudents.toLocaleString();
 }
 
-function renderCourseEnrollmentChart(data) {
+export function renderCourseEnrollmentChart(data) {
     const chartDom = document.getElementById('courseEnrollmentChart');
     const chart = echarts.init(chartDom, 'custom');
 
@@ -81,7 +79,7 @@ function renderCourseEnrollmentChart(data) {
     return chart;
 }
 
-function debounce(func, wait) {
+export function debounce(func, wait) {
     let timeout;
     return function executedFunction(...args) {
         const later = () => {
@@ -93,7 +91,7 @@ function debounce(func, wait) {
     };
 }
 
-async function initDashboard() {
+export async function initDashboard() {
     document.querySelectorAll('.chart').forEach(el => {
         el.classList.add('loading');
     });

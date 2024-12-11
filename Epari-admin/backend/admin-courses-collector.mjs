@@ -1,9 +1,9 @@
-import { writeFile, readFile } from 'fs/promises';
-import { join } from 'path';
+import { writeFile, readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import dotenv from 'dotenv';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-import { existsSync } from 'fs';
+import { fileURLToPath } from 'node:url';
+import { dirname } from 'node:path';
+import { existsSync } from 'node:fs';
 
 dotenv.config();
 
@@ -54,7 +54,8 @@ async function collectCourseStatistics() {
   };
 
   try {
-    const saveFolder = process.env.SAVEFOLDER || 'jsons';
+    // ESM: Nullish 병합 연산자 (??) 사용
+    const saveFolder = process.env.SAVEFOLDER ?? 'jsons';
     const filePath = join(__dirname, '..', saveFolder, fileName);
 
     const existingData = await loadExistingData(filePath);
@@ -86,9 +87,7 @@ async function loadExistingData(filePath) {
   return null;
 }
 
-// 1시간마다 실행
 const ONE_HOUR = 360 * 60 * 1000;
 setInterval(collectCourseStatistics, ONE_HOUR);
 
-// 초기 실행
-collectCourseStatistics();
+await collectCourseStatistics();
