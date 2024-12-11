@@ -1,4 +1,4 @@
-// dashboard-admin-courses.js
+// dashboard-instructor-courses.js
 const chartTheme = {
     color: [
         '#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de',
@@ -12,11 +12,11 @@ const chartTheme = {
 
 echarts.registerTheme('custom', chartTheme);
 
-async function loadCourseData() {
+async function loadExamData() {
     try {
         const now = new Date();
         const yyyyMMdd = now.toISOString().slice(0, 10).replace(/-/g, '');
-        const filePath = `/jsons/statistics-admin-courses-${yyyyMMdd}.json`; // 날짜 기반 파일 이름
+        const filePath = `/jsons/statistics-instructor-exam-${yyyyMMdd}.json`;
         const response = await fetch(filePath);
         const data = await response.json();
         return data;
@@ -26,19 +26,20 @@ async function loadCourseData() {
     }
 }
 
-
 function updateBasicMetrics(data) {
-    const totalStudents = data.admin_statistics.total_enrollment;
+    const totalStudents = data.admin_statistics.total_students;
+    const submissionRate = data.admin_statistics.exam_details.submission_rate;
     document.getElementById('totalStudents').textContent = totalStudents.toLocaleString();
+    document.getElementById('submissionRate').textContent = submissionRate.toFixed(1);
 }
 
-function renderCourseEnrollmentChart(data) {
-    const chartDom = document.getElementById('courseEnrollmentChart');
+function renderExamStatusChart(data) {
+    const chartDom = document.getElementById('examStatusChart');
     const chart = echarts.init(chartDom, 'custom');
 
-    const courseData = data.admin_statistics.course_enrollments.map(course => ({
-        value: course.enrolled_count,
-        name: course.course_name
+    const examData = data.admin_statistics.exam_status.map(status => ({
+        value: status.count,
+        name: status.status
     }));
 
     const option = {
@@ -48,15 +49,23 @@ function renderCourseEnrollmentChart(data) {
         },
         legend: {
             orient: 'vertical',
-            left: 'left',
+            left: '0%',
             top: 'center'
         },
         series: [
             {
-                name: '강의별 수강생',
+                name: '시험 응시 현황',
                 type: 'pie',
-                radius: '50%',
-                data: courseData,
+                radius: ['40%', '70%'],
+                startAngle: 180,
+                endAngle: 360,
+                center: ['50%', '50%'],
+                data: examData,
+                label: {
+                    show: true,
+                    formatter: '{b}: {c}명\n({d}%)',
+                    position: 'outside'
+                },
                 emphasis: {
                     itemStyle: {
                         shadowBlur: 10,
@@ -68,10 +77,6 @@ function renderCourseEnrollmentChart(data) {
                     borderRadius: 10,
                     borderColor: '#fff',
                     borderWidth: 2
-                },
-                label: {
-                    show: true,
-                    formatter: '{b}: {c}명'
                 }
             }
         ]
@@ -98,7 +103,7 @@ async function initDashboard() {
         el.classList.add('loading');
     });
 
-    const data = await loadCourseData();
+    const data = await loadExamData();
     if (!data) {
         document.querySelectorAll('.chart').forEach(el => {
             el.classList.remove('loading');
@@ -108,7 +113,7 @@ async function initDashboard() {
     }
 
     const charts = {
-        courseEnrollment: renderCourseEnrollmentChart(data)
+        examStatus: renderExamStatusChart(data)
     };
 
     document.querySelectorAll('.chart').forEach(el => {

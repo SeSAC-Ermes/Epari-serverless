@@ -10,45 +10,65 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-async function collectCourseStatistics() {
-  const now = new Date();
-  const fileName = `statistics-admin-courses-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}.json`;
+function generateRandomStatistics() {
+  // 30~50명 사이의 랜덤한 총 학생 수 생성
+  const totalStudents = Math.floor(Math.random() * (50 - 30 + 1)) + 30;
 
-  const dummyData = {
+  // 60%~100% 사이의 랜덤한 응시율 생성
+  const submissionRate = Math.floor(Math.random() * (100 - 60 + 1)) + 60;
+
+  // 응시 학생 수 계산 (응시율에 따른 학생 수)
+  const submittedCount = Math.round((totalStudents * submissionRate) / 100);
+  const notSubmittedCount = totalStudents - submittedCount;
+
+  return {
+    totalStudents,
+    submissionRate,
+    examStatus: [
+      {
+        status: "응시",
+        count: submittedCount
+      },
+      {
+        status: "미응시",
+        count: notSubmittedCount
+      }
+    ]
+  };
+}
+
+async function collectExamStatistics() {
+  const now = new Date();
+  const fileName = `statistics-instructor-exam-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}.json`;
+
+  // 랜덤 통계 생성
+  const stats = generateRandomStatistics();
+
+  const examData = {
     date: now.toISOString(),
     timestamp: {
       created_at: now.toISOString(),
-      period: {
-        start: new Date(now.setHours(0,0,0,0)).toISOString(),
-        end: new Date(now.setHours(23,59,59,999)).toISOString()
+      period: { // TODO: 추후 확인
+        start: new Date(now.setHours(0, 0, 0, 0)).toISOString(),
+        end: new Date(now.setHours(23, 59, 59, 999)).toISOString()
       },
       interval: "hourly",
       timezone: "Asia/Seoul"
     },
-    admin_statistics: {
-      total_enrollment: 100,
-      course_enrollments: [
-        {
-          course_name: "자바 프로그래밍 기초",
-          enrolled_count: 20
-        },
-        {
-          course_name: "웹 개발 실무",
-          enrolled_count: 40
-        },
-        {
-          course_name: "데이터베이스 입문",
-          enrolled_count: 10
-        },
-        {
-          course_name: "백엔드 알고리즘의 이해",
-          enrolled_count: 20
-        },
-        {
-          course_name: "인공지능 개론",
-          enrolled_count: 10
+    instructor_statistics: { // TODO: 추후 네이밍 개선
+      total_students: stats.totalStudents,
+      exam_status: stats.examStatus,
+      exam_details: {
+        title: "2024년 11월 시험",
+        date: "2024-11", // TODO: 추후 개선
+        submission_rate: stats.submissionRate,
+        chart_options: {
+          start_angle: 180,
+          end_angle: 360,
+          inner_radius: "40%", // TODO: 오찬근
+          outer_radius: "70%"
         }
-      ]
+      }
     },
     historical_data: []
   };
@@ -61,14 +81,17 @@ async function collectCourseStatistics() {
     if (existingData) {
       existingData.historical_data.push({
         date: now.toISOString(),
-        data: dummyData
+        data: examData
       });
       await writeFile(filePath, JSON.stringify(existingData, null, 2));
     } else {
-      await writeFile(filePath, JSON.stringify(dummyData, null, 2));
+      await writeFile(filePath, JSON.stringify(examData, null, 2));
     }
 
     console.log(`통계가 성공적으로 저장되었습니다: ${filePath}`);
+    console.log(`총 학생 수: ${stats.totalStudents}명`);
+    console.log(`응시율: ${stats.submissionRate}%`);
+    console.log(`응시: ${stats.examStatus[0].count}명, 미응시: ${stats.examStatus[1].count}명`);
   } catch (error) {
     console.error('통계 저장 중 오류 발생:', error);
   }
@@ -87,8 +110,8 @@ async function loadExistingData(filePath) {
 }
 
 // 1시간마다 실행
-const ONE_HOUR = 360 * 60 * 1000;
-setInterval(collectCourseStatistics, ONE_HOUR);
+const ONE_HOUR = 1000 * 10;
+setInterval(collectExamStatistics, ONE_HOUR);
 
 // 초기 실행
-collectCourseStatistics();
+collectExamStatistics();
