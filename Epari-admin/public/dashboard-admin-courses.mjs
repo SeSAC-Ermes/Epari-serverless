@@ -447,8 +447,11 @@ function renderCoursePerformanceChart(performanceData) {
                 const monthStr = params[0].axisValue;
                 let result = `${monthStr.split('-')[1]}월<br/>`;
                 params.forEach(param => {
-                    const value = param.value[param.seriesName];
-                    result += `${param.marker} ${param.seriesName}: ${value}%<br/>`;
+                    const courseData = param.value[param.seriesName];
+                    const count = courseData.count;
+                    const total = courseData.total;
+                    const percentage = courseData.percentage;
+                    result += `${param.marker} ${param.seriesName}: ${percentage}% (${count}/${total}명)<br/>`;
                 });
                 return result;
             }

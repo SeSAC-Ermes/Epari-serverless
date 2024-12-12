@@ -16,64 +16,77 @@
     <header class="header">
         <h1>관리자 대시보드</h1>
         <div class="period">
-            2024-12-10 00:00 ~ 23:59
+            <script>
+              const now = new Date();
+              const year = now.getFullYear();
+              const month = String(now.getMonth() + 1).padStart(2, '0');
+              const day = String(now.getDate()).padStart(2, '0');
+              document.write(`${year}-${month}-${day} 00:00 ~ 23:59`);
+            </script>
         </div>
     </header>
 
-    <div class="grid-container">
-        <!-- 강의별 수강생 분포 -->
-        <div class="card wide">
-            <h2>강의별 수강생 분포</h2>
+    <div class="grid-containers-wrapper">
+        <div class="grid-container2">
             <div class="current-users">
+                <span class="time">현재 총 수강생</span>&nbsp
                 <span id="totalStudents" class="count">-</span>
                 <span class="unit">명</span>
-                <span class="time">현재 총 수강생</span>
             </div>
-            <div id="courseEnrollmentChart" class="chart"></div>
+        </div>
+        <div class="grid-container1">
+            <!-- 강의별 수강생 분포 -->
+            <div class="card">
+                <h2>강의별 수강생 분포</h2>
+                <div id="courseEnrollmentChart" class="chart"></div>
+            </div>
+
+            <!-- 강의실 사용 현황 -->
+            <div class="card">
+                <h2>강의실 사용 현황</h2>
+                <div id="facilityStatusChart" class="chart"></div>
+            </div>
+
+            <!-- 운영 중인 과정 현황 -->
+            <div class="card">
+                <h2>운영 중인 과정 현황</h2>
+                <div id="courseGrid" class="ag-theme-alpine"></div>
+            </div>
         </div>
 
-        <!-- 운영 중인 과정 현황 -->
         <div class="card wide">
-            <h2>운영 중인 과정 현황</h2>
-            <div id="courseGrid" class="ag-theme-alpine"></div>
+            <h2>과정별 성과 현황</h2>
+            <div class="chart-container" style="position: relative;">
+                <div id="coursePerformanceChart" class="chart"></div>
+            </div>
         </div>
 
-        <!-- 강의실 사용 현황 -->
-        <div class="card">
-            <h2>강의실 사용 현황</h2>
-            <div id="facilityStatusChart" class="chart"></div>
-        </div>
-
-        <!-- 시간별 방문자 현황 -->
-        <div class="card wide">
-            <h2>시간별 방문자 현황</h2>
-            <div class="stats-container">
-                <div class="stat-box">
-                    <div class="stat-label">현재 방문자</div>
-                    <div class="stat-value">
-                        <span id="currentVisitors">-</span>
-                        <span class="unit">명</span>
+        <div class="grid-container1">
+            <!-- 시간별 방문자 현황 -->
+            <div class="card">
+                <h2>시간별 방문자 현황</h2>
+                <div class="stats-container">
+                    <div class="stat-box">
+                        <div class="stat-label">현재 방문자</div>
+                        <div class="stat-value">
+                            <span id="currentVisitors">-</span>
+                            <span class="unit">명</span>
+                        </div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">총 방문자</div>
+                        <div class="stat-value">
+                            <span id="totalVisitors">-</span>
+                            <span class="unit">명</span>
+                        </div>
                     </div>
                 </div>
-                <div class="stat-box">
-                    <div class="stat-label">총 방문자</div>
-                    <div class="stat-value">
-                        <span id="totalVisitors">-</span>
-                        <span class="unit">명</span>
-                    </div>
-                </div>
+                <div id="visitorTimelineChart" class="chart"></div>
             </div>
-            <div id="visitorTimelineChart" class="chart"></div>
-        </div>
-    </div>
-    <div class="card wide">
-        <h2>페이지별 방문 순위</h2>
-        <div id="pageRankingsGrid" class="ag-theme-alpine"></div>
-    </div>
-    <div class="card wide">
-        <h2>과정별 성과 현황</h2>
-        <div class="chart-container" style="position: relative;">
-            <div id="coursePerformanceChart" class="chart"></div>
+            <div class="card">
+                <h2>페이지별 방문 순위</h2>
+                <div id="pageRankingsGrid" class="ag-theme-alpine"></div>
+            </div>
         </div>
     </div>
 </div>
