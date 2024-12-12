@@ -48,15 +48,23 @@ h1 {
 .current-users {
     background-color: var(--primary-color);
     color: white;
-    padding: 8px 16px;
-    border-radius: 20px;
+    padding: 24px;
+    border-radius: 10px;
     display: inline-block;
-    margin-top: 12px;
+    min-width: 200px;
+    text-align: center;
+
+    line-height: 36px;
+}
+
+.x .count {
+    font-weight: bold;
+    font-size: 1.2em;
 }
 
 .current-users .count {
+    font-size: 1.5em;
     font-weight: bold;
-    font-size: 1.2em;
 }
 
 .current-users .time {
@@ -65,9 +73,42 @@ h1 {
     opacity: 0.8;
 }
 
-.grid-container {
+.grid-container1 {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+}
+
+.grid-container1 .card {
+    height: 500px;  /* 모든 카드의 높이를 동일하게 */
+    display: flex;
+    flex-direction: column;
+}
+
+/* 차트 스타일 수정 */
+.grid-container1 .card .chart {
+    flex: 1;
+    min-height: 0;
+    margin-top: 16px;
+}
+
+/* AG Grid 스타일 수정 */
+.grid-container1 .card .ag-theme-alpine {
+    flex: 1;
+    min-height: 0;
+    margin-top: 16px;
+}
+
+.grid-container2 {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 24px;
+}
+
+
+.grid-containers-wrapper {
+    display: flex;
+    flex-direction: column;
     gap: 24px;
 }
 
@@ -150,19 +191,14 @@ tr:hover {
     margin-left: 4px;
 }
 
-.ag-theme-alpine {
-    --ag-header-height: 40px;
-    --ag-header-foreground-color: var(--text-color);
-    --ag-header-background-color: var(--background-color);
-    --ag-header-cell-hover-background-color: var(--border-color);
-    --ag-header-cell-moving-background-color: var(--border-color);
-    height: 400px;
-    width: 100%;
-    margin-top: 16px;
-}
+
 
 @media (max-width: 768px) {
-    .grid-container {
+    .grid-container1 {
+        grid-template-columns: 1fr;
+    }
+
+    .grid-container2 {
         grid-template-columns: 1fr;
     }
 

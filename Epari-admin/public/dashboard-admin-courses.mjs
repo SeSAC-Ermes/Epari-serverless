@@ -9,6 +9,7 @@ export const chartTheme = {
     fontFamily: 'Pretendard, sans-serif'
   }
 };
+
 fetch
 echarts.registerTheme('custom', chartTheme);
 
@@ -364,8 +365,8 @@ export function initializePageRankingsGrid(data) {
     domLayout: 'autoHeight'
   };
 
-  const grid = agGrid.createGrid(gridDiv, gridOptions);
-  return grid;
+    const grid = agGrid.createGrid(gridDiv, gridOptions);
+    return grid;
 }
 
 export function debounce(func, wait) {
@@ -431,89 +432,92 @@ function renderCoursePerformanceChart(performanceData) {
 
   let currentType = 'employment';
 
-  const getOption = (type) => ({
-    title: {
-      text: type === 'employment' ? '과정별 취업률 현황' : '과정별 이탈률 현황',
-      left: 'center',
-      top: 10,
-      textStyle: {
-        fontSize: 16,
-        fontWeight: 'bold'
-      }
-    },
-    tooltip: {
-      trigger: 'axis',
-      axisPointer: {
-        type: 'shadow'
-      },
-      formatter: function (params) {
-        const monthStr = params[0].axisValue;
-        let result = `${monthStr.split('-')[1]}월<br/>`;
-        params.forEach(param => {
-          const value = param.value[param.seriesName];
-          result += `${param.marker} ${param.seriesName}: ${value}%<br/>`;
-        });
-        return result;
-      }
-    },
-    legend: {
-      data: courseNames,
-      bottom: 0,
-      type: 'scroll',
-      textStyle: {
-        fontSize: 12
-      }
-    },
-    grid: {
-      top: 60,
-      left: '3%',
-      right: '4%',
-      bottom: 80,
-      containLabel: true
-    },
-    xAxis: {
-      type: 'category',
-      data: months,
-      axisLabel: {
-        formatter: (value) => {
-          const [year, month] = value.split('-');
-          return `${month}월`;
-        }
-      }
-    },
-    yAxis: {
-      type: 'value',
-      axisLabel: {
-        formatter: '{value}%'
-      },
-      max: type === 'employment' ? 100 : 20,
-      splitLine: {
-        show: true,
-        lineStyle: {
-          type: 'dashed'
-        }
-      }
-    },
-    dataset: {
-      source: type === 'employment' ? employmentData : dropoutData
-    },
-    series: courseNames.map((name, index) => ({
-      name: name,
-      type: 'bar',
-      emphasis: {
-        focus: 'series'
-      },
-      encode: {
-        x: 'period',
-        y: name
-      },
-      itemStyle: {
-        color: type === 'employment' ?
-            undefined : // 취업률은 기본 차트 컬러
-            dropoutColors[index] // 이탈률은 지정된 빨간색 계열
-      }
-    }))
-  });
+    const getOption = (type) => ({
+        title: {
+            text: type === 'employment' ? '과정별 취업률 현황' : '과정별 이탈률 현황',
+            left: 'center',
+            top: 10,
+            textStyle: {
+                fontSize: 16,
+                fontWeight: 'bold'
+            }
+        },
+        tooltip: {
+            trigger: 'axis',
+            axisPointer: {
+                type: 'shadow'
+            },
+            formatter: function(params) {
+                const monthStr = params[0].axisValue;
+                let result = `${monthStr.split('-')[1]}월<br/>`;
+                params.forEach(param => {
+                    const courseData = param.value[param.seriesName];
+                    const count = courseData.count;
+                    const total = courseData.total;
+                    const percentage = courseData.percentage;
+                    result += `${param.marker} ${param.seriesName}: ${percentage}% (${count}/${total}명)<br/>`;
+                });
+                return result;
+            }
+        },
+        legend: {
+            data: courseNames,
+            bottom: 0,
+            type: 'scroll',
+            textStyle: {
+                fontSize: 12
+            }
+        },
+        grid: {
+            top: 60,
+            left: '3%',
+            right: '4%',
+            bottom: 80,
+            containLabel: true
+        },
+        xAxis: {
+            type: 'category',
+            data: months,
+            axisLabel: {
+                formatter: (value) => {
+                    const [year, month] = value.split('-');
+                    return `${month}월`;
+                }
+            }
+        },
+        yAxis: {
+            type: 'value',
+            axisLabel: {
+                formatter: '{value}%'
+            },
+            max: type === 'employment' ? 100 : 20,
+            splitLine: {
+                show: true,
+                lineStyle: {
+                    type: 'dashed'
+                }
+            }
+        },
+        dataset: {
+            source: type === 'employment' ? employmentData : dropoutData
+        },
+        series: courseNames.map((name, index) => ({
+            name: name,
+            type: 'bar',
+            emphasis: {
+                focus: 'series'
+            },
+            encode: {
+                x: 'period',
+                y: name
+            },
+            itemStyle: {
+                color: type === 'employment' ?
+                    undefined : // 취업률은 기본 차트 컬러
+                    dropoutColors[index] // 이탈률은 지정된 빨간색 계열
+            }
+        }))
+    });
 
   // 초기 옵션 설정
   chart.setOption(getOption('employment'));
@@ -749,106 +753,6 @@ export function renderPreferenceChart(data) {
   chart.setOption(option);
   return chart;
 }
-
-
-// export function renderPreferenceChart(data) {
-//   const chartDom = document.getElementById('preferenceChart');
-//   const chart = echarts.init(chartDom, 'custom');
-//
-//   if (!data.preference?.current_data?.preferences?.domains) {
-//     console.error('선호도 데이터가 없습니다');
-//     return;
-//   }
-//
-//   const domains = data.preference.current_data.preferences.domains;
-//
-//   // 파이 차트용 데이터 준비
-//   const pieData = domains.map(domain => ({
-//     name: domain.domainName,
-//     value: domain.total,
-//     itemStyle: {
-//       borderRadius: 5,
-//       borderColor: '#fff',
-//       borderWidth: 2
-//     },
-//     // 각 도메인의 상세 정보를 툴팁에서 보여주기 위해 저장
-//     courses: domain.courses
-//   }));
-//
-//   const option = {
-//     title: {
-//       text: '강의 분야별 선호도',
-//       left: 'center',
-//       top: 10,
-//       textStyle: {
-//         fontSize: 16,
-//         fontWeight: 'bold'
-//       }
-//     },
-//     tooltip: {
-//       trigger: 'item',
-//       formatter: function (params) {
-//         const domain = params.data;
-//         let html = `<div style="font-weight:bold">${params.name}</div>`;
-//         html += `<div>전체 수강생: ${params.value.toFixed(1)}명 (${params.percent.toFixed(1)}%)</div>`;
-//         html += '<div style="margin-top:8px">과정별 현황:</div>';
-//
-//         domain.courses.forEach(course => {
-//           html += `<div>${course.courseName}: ${course.activeStudents.toFixed(1)}명</div>`;
-//         });
-//
-//         return html;
-//       }
-//     },
-//     legend: {
-//       type: 'scroll',
-//       orient: 'vertical',
-//       right: '5%',
-//       top: 'middle',
-//       formatter: name => {
-//         const domain = domains.find(d => d.domainName === name);
-//         return `${name}: ${domain.total.toFixed(1)}명`;
-//       }
-//     },
-//     series: [
-//       {
-//         name: '분야별 선호도',
-//         type: 'pie',
-//         radius: ['40%', '70%'], // 도넛 차트 스타일
-//         center: ['45%', '50%'],  // 차트 중심점 조정
-//         avoidLabelOverlap: true,
-//         itemStyle: {
-//           borderRadius: 10,
-//           borderColor: '#fff',
-//           borderWidth: 2
-//         },
-//         label: {
-//           show: true,
-//           position: 'outer',
-//           formatter: '{b}: {d}%',
-//           fontSize: 12
-//         },
-//         emphasis: {
-//           label: {
-//             show: true,
-//             fontSize: 14,
-//             fontWeight: 'bold'
-//           },
-//           itemStyle: {
-//             shadowBlur: 10,
-//             shadowOffsetX: 0,
-//             shadowColor: 'rgba(0, 0, 0, 0.5)'
-//           }
-//         },
-//         data: pieData
-//       }
-//     ]
-//   };
-//
-//   chart.setOption(option);
-//   return chart;
-// }
-
 
 export async function initDashboard() {
   try {

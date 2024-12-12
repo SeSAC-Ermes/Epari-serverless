@@ -34,6 +34,17 @@ async function collectFacilityStatistics() {
   const endDate = new Date(now);
   endDate.setHours(23,59,59,999);
 
+  // facility_status 데이터 생성 시 퍼센트 추가
+  const facilityStatus = {
+    total: 5,
+    inUse: 2,
+    available: 3,
+    percentages: {
+      inUse: 40,    // (2/5) * 100
+      available: 60  // (3/5) * 100
+    }
+  };
+
   const currentStats = {
     timestamp: now.toISOString(),
     course_statistics: {
@@ -80,11 +91,7 @@ async function collectFacilityStatistics() {
           current_students: 10
         }
       ],
-      facility_status: {
-        total: 5,
-        inUse: 2,
-        available: 3
-      }
+      facility_status: facilityStatus
     },
     historical_data: []
   };
