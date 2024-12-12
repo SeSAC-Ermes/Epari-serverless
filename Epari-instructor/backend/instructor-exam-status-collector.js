@@ -68,7 +68,7 @@ async function collectExamStatistics() {
 
   try {
     const saveFolder = process.env.SAVEFOLDER || 'jsons';
-    const filePath = join(__dirname, '..', saveFolder, fileName);
+    const filePath = join(__dirname, saveFolder, fileName);
 
     const existingData = await loadExistingData(filePath);
     if (existingData) {
