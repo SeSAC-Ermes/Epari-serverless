@@ -23,7 +23,7 @@ export async function loadAllData() {
     const visitorsPath = `/jsons/statistics-admin-visitors-${yyyyMMdd}.json`;
     const studentPagesPath = `/jsons/statistics-student-pages-${yyyyMMdd}.json`;
     const performancePath = `/jsons/statistics-course-performance-${yyyyMM}.json`;
-    const preferencePath = `/jsons/statistics-admin-prefer-${yyyyMMdd}.json`;
+    const preferencePath = `/jsons/statistics-admin-preference-${yyyyMMdd}.json`;
 
     // 병렬로 파일들 로드
     const [facilityResponse, coursesResponse, visitorsResponse, studentPagesResponse, performanceResponse, preferenceResponse] = await Promise.all([
