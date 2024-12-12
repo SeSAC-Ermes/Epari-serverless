@@ -1,3 +1,4 @@
+// 차트 테마 설정 (기존 코드 유지)
 export const chartTheme = {
     color: [
         '#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de',
@@ -13,40 +14,32 @@ echarts.registerTheme('custom', chartTheme);
 
 export async function loadAllData() {
     try {
-        const now = new Date();
-        const yyyyMMdd = now.toISOString().slice(0, 10).replace(/-/g, '');
-        const yyyyMM = now.toISOString().slice(0, 7).replace(/-/g, '');
+        const API_BASE = 'http://localhost:3000/api/admin';
 
-        // 파일 경로 설정
-        const facilityPath = `/jsons/statistics-admin-facility-${yyyyMMdd}.json`;
-        const coursesPath = `/jsons/statistics-admin-courses-${yyyyMMdd}.json`;
-        const visitorsPath = `/jsons/statistics-admin-visitors-${yyyyMMdd}.json`;
-        const studentPagesPath = `/jsons/statistics-student-pages-${yyyyMMdd}.json`;
-        const performancePath = `/jsons/statistics-course-performance-${yyyyMM}.json`;
-
-        // 병렬로 파일들 로드
-        const [facilityResponse, coursesResponse, visitorsResponse, studentPagesResponse, performanceResponse] = await Promise.all([
-            fetch(facilityPath),
-            fetch(coursesPath),
-            fetch(visitorsPath),
-            fetch(studentPagesPath),
-            fetch(performancePath)
+        // 모든 API 요청을 병렬로 실행
+        const [coursesStudentsRes, coursesActiveRes, visitorsRes, pagesRes, performanceRes] = await Promise.all([
+            fetch(`${API_BASE}/courses-students`),
+            fetch(`${API_BASE}/courses-active`),
+            fetch(`${API_BASE}/visitors-hourly`),
+            fetch(`${API_BASE}/pages-ranking`),
+            fetch(`${API_BASE}/courses-employment-retention`)
         ]);
 
-        const [facilityData, coursesData, visitorsData, studentPagesData, performanceData] = await Promise.all([
-            facilityResponse.json(),
-            coursesResponse.json(),
-            visitorsResponse.json(),
-            studentPagesResponse.json(),
-            performanceResponse.json()
+        // 응답 데이터 파싱
+        const [coursesStudents, coursesActive, visitors, studentPages, performance] = await Promise.all([
+            coursesStudentsRes.json(),
+            coursesActiveRes.json(),
+            visitorsRes.json(),
+            pagesRes.json(),
+            performanceRes.json()
         ]);
 
         return {
-            facility: facilityData,
-            courses: coursesData,
-            visitors: visitorsData,
-            studentPages: studentPagesData,
-            performance: performanceData
+            courses: coursesStudents,
+            facility: coursesActive,
+            visitors: visitors,
+            studentPages: studentPages,
+            performance: performance
         };
     } catch (error) {
         console.error('데이터 로드 실패:', error);
@@ -55,7 +48,6 @@ export async function loadAllData() {
 }
 
 export function updateBasicMetrics(data) {
-    // courses 데이터에서 총 등록 인원 표시
     const totalStudents = data.courses.course_statistics.total_enrollment;
     document.getElementById('totalStudents').textContent = totalStudents.toLocaleString();
 }
@@ -593,40 +585,48 @@ function renderCoursePerformanceChart(performanceData) {
     return chart;
 }
 export async function initDashboard() {
-    document.querySelectorAll('.chart').forEach(el => {
-        el.classList.add('loading');
-    });
+    try {
+        document.querySelectorAll('.chart').forEach(el => {
+            el.classList.add('loading');
+        });
 
-    const data = await loadAllData();
-    if (!data) {
+        const data = await loadAllData();
+        if (!data) {
+            document.querySelectorAll('.chart').forEach(el => {
+                el.classList.remove('loading');
+                el.innerHTML = '<div class="error">데이터를 불러올 수 없습니다.</div>';
+            });
+            return;
+        }
+
+        const charts = {
+            courseEnrollment: renderCourseEnrollmentChart(data),
+            facilityStatus: renderFacilityStatusChart(data),
+            visitorTimeline: renderVisitorTimelineChart(data),
+            coursePerformance: renderCoursePerformanceChart(data.performance)
+        };
+
         document.querySelectorAll('.chart').forEach(el => {
             el.classList.remove('loading');
-            el.innerHTML = '<div class="error">데이터를 불러올 수 없습니다.</div>';
         });
-        return;
+
+        updateBasicMetrics(data);
+        updateVisitorStatistics(data);
+        initializeAgGrid(data);
+        initializePageRankingsGrid(data);
+
+        const handleResize = debounce(() => {
+            Object.values(charts).forEach(chart => chart?.resize());
+        }, 250);
+
+        window.addEventListener('resize', handleResize);
+    } catch (error) {
+        console.error('대시보드 초기화 실패:', error);
+        document.querySelectorAll('.chart').forEach(el => {
+            el.classList.remove('loading');
+            el.innerHTML = '<div class="error">대시보드를 초기화할 수 없습니다.</div>';
+        });
     }
-
-    const charts = {
-        courseEnrollment: renderCourseEnrollmentChart(data),
-        facilityStatus: renderFacilityStatusChart(data),
-        visitorTimeline: renderVisitorTimelineChart(data),
-        coursePerformance: renderCoursePerformanceChart(data.performance)
-    };
-
-    document.querySelectorAll('.chart').forEach(el => {
-        el.classList.remove('loading');
-    });
-
-    updateBasicMetrics(data);
-    updateVisitorStatistics(data);
-    initializeAgGrid(data);
-    initializePageRankingsGrid(data);
-
-    const handleResize = debounce(() => {
-        Object.values(charts).forEach(chart => chart?.resize());
-    }, 250);
-
-    window.addEventListener('resize', handleResize);
 }
 
 document.addEventListener('DOMContentLoaded', initDashboard);
