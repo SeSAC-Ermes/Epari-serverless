@@ -29,9 +29,8 @@ async function loadExamData() {
 
 // 기본 통계 지표 업데이트 함수
 function updateBasicMetrics(data) {
-  const { total_students, submission_rate } = data.statistics;
+  const { total_students } = data.statistics;
   document.getElementById('totalStudents').textContent = total_students.toLocaleString();
-  document.getElementById('submissionRate').textContent = submission_rate.toFixed(1);
 }
 
 // 시험 현황 차트 렌더링 함수

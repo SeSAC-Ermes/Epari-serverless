@@ -67,13 +67,6 @@ function renderAssignmentStatusChart(data) {
   return chart;
 }
 
-function updateAssignmentMetrics(data) {
-  const totalStudents = data.statistics.total_students;
-  const submissionRate = data.statistics.submission_rate;
-  document.getElementById('assignmentTotalStudents').textContent = totalStudents.toLocaleString();
-  document.getElementById('assignmentSubmissionRate').textContent = submissionRate.toFixed(1);
-}
-
 function debounce(func, wait) {
   let timeout;
   return function executedFunction(...args) {
@@ -107,8 +100,6 @@ async function initAssignmentDashboard() {
   document.querySelectorAll('.chart').forEach(el => {
     el.classList.remove('loading');
   });
-
-  updateAssignmentMetrics(data);
 
   const handleResize = debounce(() => {
     Object.values(charts).forEach(chart => chart.resize());

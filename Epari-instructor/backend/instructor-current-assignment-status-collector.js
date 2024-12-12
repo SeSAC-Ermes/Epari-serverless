@@ -1,8 +1,7 @@
-import { writeFile, readFile } from 'fs/promises';
-import { join } from 'path';
+import { readFile, writeFile } from 'fs/promises';
+import { dirname, join } from 'path';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
-import { dirname } from 'path';
 import { existsSync } from 'fs';
 
 dotenv.config();
@@ -14,7 +13,7 @@ const __dirname = dirname(__filename);
  * 현재 과제 데이터 생성
  */
 function generateCurrentAssignmentData() {
-  const totalStudents = 34; // 고정된 총 학생 수
+  const totalStudents = 30; // 고정된 총 학생 수
   const submittedCount = 5; // 고정된 제출 학생 수
   const notSubmittedCount = totalStudents - submittedCount;
 

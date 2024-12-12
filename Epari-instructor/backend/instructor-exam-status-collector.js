@@ -1,8 +1,7 @@
-import { writeFile, readFile } from 'fs/promises';
-import { join } from 'path';
+import { readFile, writeFile } from 'fs/promises';
+import { dirname, join } from 'path';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
-import { dirname } from 'path';
 import { existsSync } from 'fs';
 
 dotenv.config();
@@ -18,7 +17,7 @@ const __dirname = dirname(__filename);
  * 랜덤 데이터 생성
  */
 function generateRandomStatistics() {
-  const totalStudents = Math.floor(Math.random() * (50 - 30 + 1)) + 30;
+  const totalStudents = 30;
   const submissionRate = Math.floor(Math.random() * (100 - 60 + 1)) + 60;
   const submittedCount = Math.round((totalStudents * submissionRate) / 100);
   const notSubmittedCount = totalStudents - submittedCount;

@@ -18,7 +18,7 @@ const __dirname = dirname(__filename);
  * 랜덤 데이터 생성
  */
 function generateRandomStatistics() {
-  const totalStudents = 34; // 고정된 총 학생 수
+  const totalStudents = 30; // 고정된 총 학생 수
   const submissionRate = Math.floor(Math.random() * (100 - 60 + 1)) + 60;
   const submittedCount = Math.round((totalStudents * submissionRate) / 100);
   const notSubmittedCount = totalStudents - submittedCount;
@@ -112,6 +112,7 @@ async function loadExistingData(filePath) {
 
 // 1시간마다 실행
 const ONE_HOUR = 1000 * 60 * 60;
+// const ONE_HOUR = 1000 * 60 * 60;
 setInterval(collectAssignmentStatistics, ONE_HOUR);
 
 // 초기 실행

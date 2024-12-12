@@ -69,6 +69,7 @@ h1 {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 24px;
+    margin-bottom: 24px;
 }
 
 .card {
@@ -88,29 +89,42 @@ h1 {
     margin-top: 16px;
 }
 
-.table-container {
-    margin-top: 16px;
-    overflow-x: auto;
+.student-section {
+    background: var(--card-background);
+    border-radius: var(--card-radius);
+    padding: 24px;
+    box-shadow: 0 2px 4px var(--shadow-color);
 }
 
-table {
+.summary-box {
+    background-color: var(--background-color);
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
+
+.summary-title {
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.summary-item {
+    padding: 10px;
+    background-color: white;
+    border-radius: 3px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.ag-theme-alpine {
+    height: 600px;
     width: 100%;
-    border-collapse: collapse;
-}
-
-th, td {
-    padding: 12px;
-    text-align: left;
-    border-bottom: 1px solid var(--border-color);
-}
-
-th {
-    background-color: var(--background-color);
-    font-weight: 600;
-}
-
-tr:hover {
-    background-color: var(--background-color);
+    margin-top: 16px;
 }
 
 @media (max-width: 768px) {

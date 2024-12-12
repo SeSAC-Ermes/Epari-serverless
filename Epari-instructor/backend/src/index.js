@@ -90,6 +90,15 @@ app.get('/api/v1/statistics/current-assignment/:date', validateDate, async (req,
   res.json(data);
 });
 
+// 학생 통계
+app.get('/api/v1/statistics/students/:date', validateDate, async (req, res) => {
+  const data = await loadStatisticsData('students', req.params.date);
+  if (!data) {
+    return res.status(404).json({ error: 'Student statistics data not found' });
+  }
+  res.json(data);
+});
+
 // 404 에러 핸들링
 app.use((req, res) => {
   res.status(404).json({ error: 'Not Found' });
