@@ -110,6 +110,18 @@ export function renderCourseEnrollmentChart(data) {
 }
 
 export function initializeAgGrid(data) {
+    const gridDiv = document.querySelector('#courseGrid');
+    if (!gridDiv) {
+        console.error('Grid container not found');
+        return;
+    }
+
+    // AG Grid 가용성 체크
+    if (!window.agGrid) {
+        console.error('AG Grid library is not loaded');
+        return;
+    }
+
     const gridOptions = {
         columnDefs: [
             { headerName: "No.", valueGetter: "node.rowIndex + 1", width: 70 },
@@ -133,8 +145,9 @@ export function initializeAgGrid(data) {
         domLayout: 'autoHeight'
     };
 
-    const gridDiv = document.querySelector('#courseGrid');
-    new agGrid.Grid(gridDiv, gridOptions);
+    // 새로운 초기화 방식 사용
+    const grid = agGrid.createGrid(gridDiv, gridOptions);
+    return grid;
 }
 
 export function renderFacilityStatusChart(data) {
@@ -303,6 +316,12 @@ export function renderVisitorTimelineChart(data) {
 }
 
 export function initializePageRankingsGrid(data) {
+    const gridDiv = document.querySelector('#pageRankingsGrid');
+    if (!gridDiv) {
+        console.error('Page rankings grid container not found');
+        return;
+    }
+
     const gridOptions = {
         columnDefs: [
             {
@@ -346,20 +365,11 @@ export function initializePageRankingsGrid(data) {
             resizable: true
         },
         rowData: data.studentPages.page_statistics.pages,
-        domLayout: 'autoHeight',
-        getRowStyle: params => {
-            if (params.node.rowIndex < 5) {
-                return {
-                    'background-color': '#f8f9fa',
-                    'border-bottom': params.node.rowIndex === 4 ?
-                        '2px solid #e9ecef' : '1px solid #e9ecef'
-                };
-            }
-        }
+        domLayout: 'autoHeight'
     };
 
-    const gridDiv = document.querySelector('#pageRankingsGrid');
-    new agGrid.Grid(gridDiv, gridOptions);
+    const grid = agGrid.createGrid(gridDiv, gridOptions);
+    return grid;
 }
 
 export function debounce(func, wait) {
