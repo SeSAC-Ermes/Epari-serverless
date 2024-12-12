@@ -1,3 +1,4 @@
+// 차트 테마 설정 (기존 코드 유지)
 export const chartTheme = {
     color: [
         '#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de',
@@ -7,46 +8,40 @@ export const chartTheme = {
     textStyle: {
         fontFamily: 'Pretendard, sans-serif'
     }
-};
-
+};fetch
 echarts.registerTheme('custom', chartTheme);
 
 export async function loadAllData() {
     try {
-        const now = new Date();
-        const yyyyMMdd = now.toISOString().slice(0, 10).replace(/-/g, '');
-        const yyyyMM = now.toISOString().slice(0, 7).replace(/-/g, '');
+        const API_BASE = 'http://localhost:3000/api/admin';
 
-        // 파일 경로 설정
-        const facilityPath = `/jsons/statistics-admin-facility-${yyyyMMdd}.json`;
-        const coursesPath = `/jsons/statistics-admin-courses-${yyyyMMdd}.json`;
-        const visitorsPath = `/jsons/statistics-admin-visitors-${yyyyMMdd}.json`;
-        const studentPagesPath = `/jsons/statistics-student-pages-${yyyyMMdd}.json`;
-        const performancePath = `/jsons/statistics-course-performance-${yyyyMM}.json`;
-
-        // 병렬로 파일들 로드
-        const [facilityResponse, coursesResponse, visitorsResponse, studentPagesResponse, performanceResponse] = await Promise.all([
-            fetch(facilityPath),
-            fetch(coursesPath),
-            fetch(visitorsPath),
-            fetch(studentPagesPath),
-            fetch(performancePath)
+        // 모든 API 요청을 병렬로 실행
+        const [coursesStudentsRes, coursesActiveRes, visitorsRes, pagesRes, performanceRes, preferenceRes] = await Promise.all([
+            fetch(`${API_BASE}/courses-students`),
+            fetch(`${API_BASE}/courses-active`),
+            fetch(`${API_BASE}/visitors-hourly`),
+            fetch(`${API_BASE}/pages-ranking`),
+            fetch(`${API_BASE}/courses-employment-retention`),
+            fetch(`${API_BASE}/courses-preference`)
         ]);
 
-        const [facilityData, coursesData, visitorsData, studentPagesData, performanceData] = await Promise.all([
-            facilityResponse.json(),
-            coursesResponse.json(),
-            visitorsResponse.json(),
-            studentPagesResponse.json(),
-            performanceResponse.json()
+        // 응답 데이터 파싱
+        const [coursesStudents, coursesActive, visitors, studentPages, performance, preference] = await Promise.all([
+            coursesStudentsRes.json(),
+            coursesActiveRes.json(),
+            visitorsRes.json(),
+            pagesRes.json(),
+            performanceRes.json(),
+            preferenceRes.json()
         ]);
 
         return {
-            facility: facilityData,
-            courses: coursesData,
-            visitors: visitorsData,
-            studentPages: studentPagesData,
-            performance: performanceData
+            courses: coursesStudents,
+            facility: coursesActive,
+            visitors: visitors,
+            studentPages: studentPages,
+            performance: performance,
+            preference: preference
         };
     } catch (error) {
         console.error('데이터 로드 실패:', error);
@@ -55,7 +50,6 @@ export async function loadAllData() {
 }
 
 export function updateBasicMetrics(data) {
-    // courses 데이터에서 총 등록 인원 표시
     const totalStudents = data.courses.course_statistics.total_enrollment;
     document.getElementById('totalStudents').textContent = totalStudents.toLocaleString();
 }
@@ -153,7 +147,6 @@ export function initializeAgGrid(data) {
 export function renderFacilityStatusChart(data) {
     const chartDom = document.getElementById('facilityStatusChart');
     const chart = echarts.init(chartDom, 'custom');
-
     const option = {
         tooltip: {
             trigger: 'item',
@@ -187,6 +180,7 @@ export function renderFacilityStatusChart(data) {
                 labelLine: {
                     show: false
                 },
+
                 data: [
                     {
                         value: data.facility.course_statistics.facility_status.inUse,
@@ -202,6 +196,7 @@ export function renderFacilityStatusChart(data) {
             }
         ]
     };
+
 
     chart.setOption(option);
     return chart;
@@ -592,41 +587,136 @@ function renderCoursePerformanceChart(performanceData) {
 
     return chart;
 }
-export async function initDashboard() {
-    document.querySelectorAll('.chart').forEach(el => {
-        el.classList.add('loading');
-    });
 
-    const data = await loadAllData();
-    if (!data) {
-        document.querySelectorAll('.chart').forEach(el => {
-            el.classList.remove('loading');
-            el.innerHTML = '<div class="error">데이터를 불러올 수 없습니다.</div>';
-        });
+// 선호도 차트 렌더링 함수 추가
+export function renderPreferenceChart(data) {
+    const chartDom = document.getElementById('preferenceChart');
+    const chart = echarts.init(chartDom, 'custom');
+
+    if (!data.preference?.current_data?.preferences?.domains) {
+        console.error('선호도 데이터가 없습니다');
         return;
     }
 
-    const charts = {
-        courseEnrollment: renderCourseEnrollmentChart(data),
-        facilityStatus: renderFacilityStatusChart(data),
-        visitorTimeline: renderVisitorTimelineChart(data),
-        coursePerformance: renderCoursePerformanceChart(data.performance)
+    const domains = data.preference.current_data.preferences.domains;
+
+    // 도메인별 데이터 준비
+    const series = domains.map(domain => ({
+        name: domain.domainName,
+        type: 'bar',
+        data: [domain.total],
+        itemStyle: {
+            borderRadius: 6
+        },
+        // 각 도메인의 과정별 상세 데이터
+        children: domain.courses.map(course => ({
+            name: course.courseName,
+            value: course.activeStudents
+        }))
+    }));
+
+    const option = {
+        title: {
+            text: '강의 분야별 선호도',
+            left: 'center',
+            top: 10
+        },
+        tooltip: {
+            trigger: 'axis',
+            axisPointer: {
+                type: 'shadow'
+            },
+            formatter: function(params) {
+                const domain = domains.find(d => d.domainName === params[0].name);
+                if (!domain) return params[0].name;
+
+                let html = `<div style="font-weight:bold">${params[0].name}</div>`;
+                html += `<div>총 수강생: ${params[0].value}명</div>`;
+                html += '<div style="margin-top:8px">과정별 현황:</div>';
+
+                domain.courses.forEach(course => {
+                    html += `<div>${course.courseName}: ${course.activeStudents}명</div>`;
+                });
+
+                return html;
+            }
+        },
+        grid: {
+            left: '3%',
+            right: '4%',
+            bottom: '15%',
+            top: '15%',
+            containLabel: true
+        },
+        xAxis: {
+            type: 'category',
+            data: domains.map(d => d.domainName),
+            axisLabel: {
+                interval: 0,
+                rotate: 30
+            }
+        },
+        yAxis: {
+            type: 'value',
+            name: '수강생 수',
+            axisLabel: {
+                formatter: '{value}명'
+            }
+        },
+        series: series,
+        legend: {
+            show: false
+        }
     };
 
-    document.querySelectorAll('.chart').forEach(el => {
-        el.classList.remove('loading');
-    });
+    chart.setOption(option);
+    return chart;
+}
 
-    updateBasicMetrics(data);
-    updateVisitorStatistics(data);
-    initializeAgGrid(data);
-    initializePageRankingsGrid(data);
+export async function initDashboard() {
+    try {
+        document.querySelectorAll('.chart').forEach(el => {
+            el.classList.add('loading');
+        });
 
-    const handleResize = debounce(() => {
-        Object.values(charts).forEach(chart => chart?.resize());
-    }, 250);
+        const data = await loadAllData();
+        if (!data) {
+            document.querySelectorAll('.chart').forEach(el => {
+                el.classList.remove('loading');
+                el.innerHTML = '<div class="error">데이터를 불러올 수 없습니다.</div>';
+            });
+            return;
+        }
 
-    window.addEventListener('resize', handleResize);
+        const charts = {
+            courseEnrollment: renderCourseEnrollmentChart(data),
+            facilityStatus: renderFacilityStatusChart(data),
+            visitorTimeline: renderVisitorTimelineChart(data),
+            coursePerformance: renderCoursePerformanceChart(data.performance),
+            preference: renderPreferenceChart(data)
+        };
+
+        document.querySelectorAll('.chart').forEach(el => {
+            el.classList.remove('loading');
+        });
+
+        updateBasicMetrics(data);
+        updateVisitorStatistics(data);
+        initializeAgGrid(data);
+        initializePageRankingsGrid(data);
+
+        const handleResize = debounce(() => {
+            Object.values(charts).forEach(chart => chart?.resize());
+        }, 250);
+
+        window.addEventListener('resize', handleResize);
+    } catch (error) {
+        console.error('대시보드 초기화 실패:', error);
+        document.querySelectorAll('.chart').forEach(el => {
+            el.classList.remove('loading');
+            el.innerHTML = '<div class="error">대시보드를 초기화할 수 없습니다.</div>';
+        });
+    }
 }
 
 document.addEventListener('DOMContentLoaded', initDashboard);

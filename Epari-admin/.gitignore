@@ -7,7 +7,7 @@ HELP.md
 
 # 의존성 디렉토리
 node_modules/
-jsons/
+src/jsons/
 
 # 환경 설정 파일
 .env
