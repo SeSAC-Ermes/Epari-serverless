@@ -145,7 +145,6 @@ export function initializeAgGrid(data) {
 export function renderFacilityStatusChart(data) {
     const chartDom = document.getElementById('facilityStatusChart');
     const chart = echarts.init(chartDom, 'custom');
-
     const option = {
         tooltip: {
             trigger: 'item',
@@ -179,6 +178,7 @@ export function renderFacilityStatusChart(data) {
                 labelLine: {
                     show: false
                 },
+
                 data: [
                     {
                         value: data.facility.course_statistics.facility_status.inUse,
@@ -194,6 +194,7 @@ export function renderFacilityStatusChart(data) {
             }
         ]
     };
+
 
     chart.setOption(option);
     return chart;

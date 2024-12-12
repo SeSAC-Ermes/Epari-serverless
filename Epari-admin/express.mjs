@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { readFile } from 'fs/promises';
+import { existsSync } from 'fs';
 
 // ES 모듈에서 __dirname 사용하기 위한 설정
 const __filename = fileURLToPath(import.meta.url);
@@ -64,7 +66,8 @@ app.get('/api/admin/courses-active', async (req, res) => {
           period: course.period,
           room: course.room,
           current_students: course.current_students
-        }))
+        })),
+        facility_status: data.course_statistics.facility_status
       }
     });
   } catch (error) {
