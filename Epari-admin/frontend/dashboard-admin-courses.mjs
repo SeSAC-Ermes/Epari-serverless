@@ -15,13 +15,14 @@ export async function loadAllData() {
     try {
         const now = new Date();
         const yyyyMMdd = now.toISOString().slice(0, 10).replace(/-/g, '');
+        const yyyyMM = now.toISOString().slice(0, 7).replace(/-/g, '');
 
         // 파일 경로 설정
         const facilityPath = `/jsons/statistics-admin-facility-${yyyyMMdd}.json`;
         const coursesPath = `/jsons/statistics-admin-courses-${yyyyMMdd}.json`;
         const visitorsPath = `/jsons/statistics-admin-visitors-${yyyyMMdd}.json`;
         const studentPagesPath = `/jsons/statistics-student-pages-${yyyyMMdd}.json`;
-        const performancePath = `/jsons/statistics-admin-performance-${yyyyMMdd}.json`;
+        const performancePath = `/jsons/statistics-course-performance-${yyyyMM}.json`;
 
         // 병렬로 파일들 로드
         const [facilityResponse, coursesResponse, visitorsResponse, studentPagesResponse, performanceResponse] = await Promise.all([
