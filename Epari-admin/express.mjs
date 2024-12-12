@@ -135,4 +135,26 @@ app.use((err, req, res, next) => {
   });
 });
 
+
+// 6. 강의 분야별 선호도
+app.get('/api/admin/courses-preference', async (req, res) => {
+  try {
+    const currentDate = new Date();
+    const fileName = `statistics-admin-preference-${currentDate.getFullYear()}${String(currentDate.getMonth() + 1).padStart(2, '0')}${String(currentDate.getDate()).padStart(2, '0')}.json`;
+    const filePath = join(__dirname,'src', 'jsons', fileName);
+
+    // 정확한 파일 경로 출력
+    console.log('Current directory:', __dirname);
+    console.log('Attempting to read file at:', filePath);
+    console.log('File exists?', existsSync(filePath));
+
+    const data = await readFile(filePath, 'utf8');
+    res.json(JSON.parse(data));
+  } catch (error) {
+    console.error('Error details:', error);
+    res.status(500).json({ error: '선호도 데이터를 불러올 수 없습니다.' });
+  }
+});
+
+
 export default app;
