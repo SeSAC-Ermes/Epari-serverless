@@ -13,31 +13,62 @@ dotenv.config();
 // 트렌드 계산을 위한 기준값 설정
 const TREND_THRESHOLD = 0.05; // 5% 변동을 기준으로 트렌드 판단
 
-// 선호도 데이터 구조 정의
+// 선호도 데이터 구조 정의 (색상 정보 추가)
 const COURSE_PREFERENCES = {
   'programming': {
     name: '프로그래밍',
+    color: '#5470c6',
     courses: [
-      { id: 'java_basic', name: '자바 프로그래밍 기초', baseCount: 20, trend: 'rising' },
-      { id: 'web_dev', name: '웹 개발 실무', baseCount: 40, trend: 'stable' },
-      { id: 'backend_algo', name: '백엔드 알고리즘의 이해', baseCount: 20, trend: 'rising' }
+      { id: 'java_basic', name: '자바 프로그래밍 기초', baseCount: 20, trend: 'rising', color: '#5470c6' },
+      { id: 'web_dev', name: '웹 개발 실무', baseCount: 40, trend: 'stable', color: '#91cc75' },
+      { id: 'backend_algo', name: '백엔드 알고리즘의 이해', baseCount: 20, trend: 'rising', color: '#fac858' }
     ]
   },
   'data_science': {
     name: '데이터 사이언스',
+    color: '#ee6666',
     courses: [
-      { id: 'db_intro', name: '데이터베이스 입문', baseCount: 10, trend: 'stable' },
-      { id: 'ai_basics', name: '인공지능 개론', baseCount: 10, trend: 'rising' }
+      { id: 'db_intro', name: '데이터베이스 입문', baseCount: 10, trend: 'stable', color: '#ee6666' },
+      { id: 'ai_basics', name: '인공지능 개론', baseCount: 10, trend: 'rising', color: '#73c0de' }
     ]
   },
   'cloud': {
     name: '클라우드',
+    color: '#3ba272',
     courses: [
-      { id: 'aws_basics', name: 'AWS 기초', baseCount: 15, trend: 'rising' },
-      { id: 'docker', name: '도커/쿠버네티스', baseCount: 25, trend: 'rising' }
+      { id: 'aws_basics', name: 'AWS 기초', baseCount: 15, trend: 'rising', color: '#3ba272' },
+      { id: 'docker', name: '도커/쿠버네티스', baseCount: 25, trend: 'rising', color: '#fc8452' }
     ]
   }
 };
+
+// 트렌드에 따른 색상 조정 함수
+function adjustColorByTrend(baseColor, trend) {
+  const hex2rgb = (hex) => {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return [r, g, b];
+  };
+
+  const rgb2hex = (r, g, b) => {
+    return '#' + [r, g, b].map(x => {
+      const hex = Math.min(255, Math.max(0, Math.round(x))).toString(16);
+      return hex.length === 1 ? '0' + hex : hex;
+    }).join('');
+  };
+
+  const [r, g, b] = hex2rgb(baseColor);
+
+  switch (trend) {
+    case 'rising':
+      return rgb2hex(Math.min(255, r * 1.2), Math.min(255, g * 1.2), Math.min(255, b * 1.2));
+    case 'falling':
+      return rgb2hex(r * 0.8, g * 0.8, b * 0.8);
+    default:
+      return baseColor;
+  }
+}
 
 // 트렌드 계산 함수
 function calculateTrend(currentValue, previousValue) {
@@ -137,7 +168,8 @@ async function collectCoursePreferenceStatistics() {
           courseId: course.id,
           courseName: course.name,
           activeStudents: currentValue,
-          trend: trend
+          trend: trend,
+          color: adjustColorByTrend(course.color, trend) // 트렌드에 따라 색상 조정
         };
       });
 
@@ -145,7 +177,8 @@ async function collectCoursePreferenceStatistics() {
         domainId: key,
         domainName: domain.name,
         total: domainCourses.reduce((sum, course) => sum + course.activeStudents, 0),
-        courses: domainCourses
+        courses: domainCourses,
+        color: domain.color
       };
     });
 
@@ -171,14 +204,12 @@ async function collectCoursePreferenceStatistics() {
       const existingContent = await readFile(filePath, 'utf8');
       const existingData = JSON.parse(existingContent);
 
-      // historical_data 배열이 없으면 생성
       if (!existingData.historical_data) {
         existingData.historical_data = [];
       }
 
-      // 최대 24개의 기록만 유지 (24시간)
       if (existingData.historical_data.length >= 24) {
-        existingData.historical_data.shift(); // 가장 오래된 데이터 제거
+        existingData.historical_data.shift();
       }
 
       existingData.historical_data.push({
@@ -214,9 +245,9 @@ function scheduleCollection() {
   // 즉시 실행
   collectCoursePreferenceStatistics();
 
-  // 1시간마다 실행
-  const ONE_HOUR = 15 * 1000;
-  setInterval(collectCoursePreferenceStatistics, ONE_HOUR);
+  // 15초마다 실행 (테스트용)
+  const FIFTEEN_SECONDS = 15 * 1000;
+  setInterval(collectCoursePreferenceStatistics, FIFTEEN_SECONDS);
 }
 
 // 프로세스 시작
