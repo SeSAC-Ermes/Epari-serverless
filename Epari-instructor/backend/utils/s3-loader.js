@@ -28,8 +28,8 @@ const s3Client = new S3Client({
 });
 
 export async function loadStatisticsFromS3(type, date) {
+  const fileName = `statistics-instructor-${type}-${date}.json`;
   try {
-    const fileName = `statistics-instructor-${type}-${date}.json`;
     console.log('Attempting to load file:', fileName);
     console.log('Using bucket:', process.env.AWS_S3_BUCKET);
 
@@ -39,12 +39,17 @@ export async function loadStatisticsFromS3(type, date) {
 
     const response = await s3Client.send(new GetObjectCommand({
       Bucket: process.env.AWS_S3_BUCKET,
-      Key: fileName
+      Key: `${type}/${fileName}`  // 폴더 경로 추가
     }));
 
     const data = await response.Body.transformToString();
     return JSON.parse(data);
   } catch (error) {
+    if (error.name === 'NoSuchKey') {
+      // 파일이 없는 경우 null 반환
+      console.log(`File not found in S3: ${type}/${fileName}`);
+      return null;
+    }
     console.error('S3 Error:', error);
     throw error;
   }
