@@ -664,7 +664,7 @@ export function renderPreferenceChart(data) {
 
   const option = {
     title: {
-      text: '과정별 수강생 현황',
+      text: '강의 분야별 선호도',
       subtext: '트렌드: 상승 🔼 안정 ➡️ 하락 🔽',
       left: 'center',
       top: '5%',
