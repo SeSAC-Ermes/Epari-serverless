@@ -67,7 +67,7 @@ h1 {
 
 .grid-container {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
     gap: 24px;
     margin-bottom: 24px;
 }
@@ -80,7 +80,11 @@ h1 {
 }
 
 .card.wide {
-    grid-column: span 2;
+    grid-column: 1 / -1;
+}
+
+.card.wide-half {
+    grid-column: 2;
 }
 
 .chart {
@@ -127,12 +131,30 @@ h1 {
     margin-top: 16px;
 }
 
+.charts-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-top: 16px;
+}
+
+.chart-wrapper h3 {
+    margin: 0 0 16px 0;
+    font-size: 16px;
+    color: var(--text-secondary);
+}
+
 @media (max-width: 768px) {
     .grid-container {
         grid-template-columns: 1fr;
     }
 
+    .card.wide-half,
     .card.wide {
-        grid-column: span 1;
+        grid-column: 1;
+    }
+
+    .charts-container {
+        grid-template-columns: 1fr;
     }
 }

@@ -44,6 +44,15 @@ function renderExamStatusChart(data) {
   }));
 
   const option = {
+    title: {
+      text: data.statistics.examInfo.title,  // 시험 제목 추가
+      bottom: '0%',
+      left: 'center',
+      textStyle: {
+        fontSize: 14,
+        fontWeight: 'normal'
+      }
+    },
     tooltip: {
       trigger: 'item',
       formatter: '{b}: {c}명 ({d}%)'
@@ -51,7 +60,7 @@ function renderExamStatusChart(data) {
     series: [{
       type: 'pie',
       radius: ['40%', '70%'],
-      center: ['50%', '45%'],
+      center: ['50%', '70%'],
       startAngle: 180,
       endAngle: 360,
       data: examData,

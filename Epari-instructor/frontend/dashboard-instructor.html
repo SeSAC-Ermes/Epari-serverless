@@ -30,14 +30,22 @@
             <div id="examStatusChart" class="chart"></div>
         </div>
 
-        <div class="card">
-            <h2>이전 과제 제출 결과</h2>
-            <div id="assignmentStatusChart" class="chart"></div>
+        <div class="card wide-half">
+            <h2>주차별 평균 성적 추이</h2>
+            <div id="weeklyScoresChart" class="chart"></div>
         </div>
 
-        <div class="card">
-            <h2>현재 진행 중인 과제 제출 현황</h2>
-            <div id="currentAssignmentStatusChart" class="chart"></div>
+        <div class="card wide">
+            <div class="charts-container">
+                <div class="chart-wrapper">
+                    <h2>이전 과제 제출 결과</h2>
+                    <div id="assignmentStatusChart" class="chart"></div>
+                </div>
+                <div class="chart-wrapper">
+                    <h2>현재 진행 중인 과제 제출 현황</h2>
+                    <div id="currentAssignmentStatusChart" class="chart"></div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -56,5 +64,6 @@
 <script src="js/dashboard-instructor-assignment.js"></script>
 <script src="js/dashboard-instructor-current-assignment.js"></script>
 <script src="js/dashboard-instructor-students.js"></script>
+<script src="js/dashboard-instructor-weekly-scores.js"></script>
 </body>
 </html>

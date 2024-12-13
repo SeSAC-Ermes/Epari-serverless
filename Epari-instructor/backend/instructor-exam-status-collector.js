@@ -22,6 +22,11 @@ function generateRandomStatistics() {
   const submittedCount = Math.round((totalStudents * submissionRate) / 100);
   const notSubmittedCount = totalStudents - submittedCount;
 
+  // 시험 정보 추가
+  const examInfo = {
+    title: "JavaScript 기초 평가",  // 시험 제목 추가
+  };
+
   return {
     totalStudents,
     submissionRate,
@@ -34,7 +39,8 @@ function generateRandomStatistics() {
         status: "미응시",
         count: notSubmittedCount
       }
-    ]
+    ],
+    examInfo
   };
 }
 
@@ -61,7 +67,8 @@ async function collectExamStatistics() {
     statistics: {
       total_students: stats.totalStudents,
       exam_status: stats.examStatus,
-      submission_rate: stats.submissionRate
+      submission_rate: stats.submissionRate,
+      examInfo: stats.examInfo
     }
   };
 

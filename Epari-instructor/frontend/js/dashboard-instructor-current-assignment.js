@@ -38,7 +38,7 @@ function renderCurrentAssignmentStatusChart(data) {
       {
         type: 'pie',
         radius: ['40%', '70%'],
-        center: ['50%', '45%'],
+        center: ['50%', '70%'],
         startAngle: 180,
         endAngle: 360,
         data: assignmentData,

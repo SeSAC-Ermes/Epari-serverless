@@ -72,6 +72,15 @@ app.get('/api/v1/statistics/exam/:date', validateDate, async (req, res) => {
   res.json(data);
 });
 
+// 주차별 성적 통계
+app.get('/api/v1/statistics/weekly-scores/:date', validateDate, async (req, res) => {
+  const data = await loadStatisticsData('weekly-scores', req.params.date);
+  if (!data) {
+    return res.status(404).json({ error: 'Weekly scores statistics data not found' });
+  }
+  res.json(data);
+});
+
 // 과제 통계
 app.get('/api/v1/statistics/assignment/:date', validateDate, async (req, res) => {
   const data = await loadStatisticsData('assignment', req.params.date);
