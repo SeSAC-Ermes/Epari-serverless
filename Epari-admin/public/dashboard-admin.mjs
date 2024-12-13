@@ -135,10 +135,20 @@ export function initializeAgGrid(data) {
     defaultColDef: {
       sortable: true,
       filter: true,
-      resizable: true
+      resizable: true,
+      suppressSizeToFit: false
     },
     rowData: data.facility.course_statistics.course_enrollments,
-    domLayout: 'autoHeight'
+    domLayout: 'normal', // autoHeight 대신 normal 사용
+    suppressHorizontalScroll: false, // 가로 스크롤 허용
+    suppressColumnVirtualisation: true, // 컬럼 가상화 비활성화
+
+    onGridSizeChanged: (params) => {
+      params.api.sizeColumnsToFit(); // 그리드 크기 변경시 컬럼 크기 자동 조정
+    },
+    onFirstDataRendered: (params) => {
+      params.api.sizeColumnsToFit(); // 첫 데이터 렌더링시 컬럼 크기 자동 조정
+    }
   };
 
   // 새로운 초기화 방식 사용
@@ -319,54 +329,82 @@ export function initializePageRankingsGrid(data) {
     return;
   }
 
+  const containerWidth = gridDiv.offsetWidth;
+  const totalFlex = 640; // 모든 컬럼의 너비 합
+
+  // 컨테이너 너비에 맞게 비율 계산
+  const widthFactor = containerWidth / totalFlex;
+
   const gridOptions = {
     columnDefs: [
       {
         headerName: "순위",
         valueGetter: "node.rowIndex + 1",
-        width: 80,
-        cellStyle: params => ({
-          'font-weight': params.value <= 5 ? 'bold' : 'normal',
-          'background-color': params.value <= 5 ? '#f8f9fa' : 'white'
-        })
+        width: Math.floor(80 * widthFactor)
       },
       {
         headerName: "페이지명",
         field: "page_name",
-        width: 200
+        width: Math.floor(150 * widthFactor),
+        flex: 1
       },
       {
         headerName: "방문수",
         field: "visits",
-        width: 120,
+        width: Math.floor(120 * widthFactor),
         type: 'numericColumn',
         valueFormatter: params => `${params.value.toLocaleString()}회`
       },
       {
         headerName: "순 방문자",
         field: "unique_visitors",
-        width: 120,
+        width: Math.floor(120 * widthFactor),
         type: 'numericColumn',
         valueFormatter: params => `${params.value.toLocaleString()}명`
       },
       {
         headerName: "평균 체류시간",
         field: "avg_duration_minutes",
-        width: 120,
+        width: Math.floor(130 * widthFactor),
         valueFormatter: params => `${params.value}분`
       }
     ],
+    getRowStyle: params => {
+      const isTop3 = params.node.rowIndex < 3;
+      return {
+        'font-weight': isTop3 ? 'Bold' : null,
+        'background-color': isTop3 ? '#f0faff' : null,
+        'transition': 'background-color 0.2s'
+      };
+    },
     defaultColDef: {
       sortable: true,
       filter: true,
-      resizable: true
+      resizable: true,
+      suppressSizeToFit: false
     },
     rowData: data.studentPages.page_statistics.pages,
-    domLayout: 'autoHeight'
+    rowClass: 'ag-row-hover-enabled',
+    domLayout: 'normal', // autoHeight 대신 normal 사용
+    suppressHorizontalScroll: false, // 가로 스크롤 허용
+    suppressColumnVirtualisation: true, // 컬럼 가상화 비활성화
+
+    onGridSizeChanged: (params) => {
+      params.api.sizeColumnsToFit(); // 그리드 크기 변경시 컬럼 크기 자동 조정
+    },
+    onFirstDataRendered: (params) => {
+      params.api.sizeColumnsToFit(); // 첫 데이터 렌더링시 컬럼 크기 자동 조정
+    }
   };
 
-    const grid = agGrid.createGrid(gridDiv, gridOptions);
-    return grid;
+  const grid = agGrid.createGrid(gridDiv, gridOptions);
+
+  // 윈도우 리사이즈 시 그리드 크기 조정
+  window.addEventListener('resize', () => {
+    grid.api.sizeColumnsToFit();
+  });
+
+  return grid;
 }
 
 export function debounce(func, wait) {
@@ -664,7 +702,7 @@ export function renderPreferenceChart(data) {
 
   const option = {
     title: {
-      text: '과정별 수강생 현황',
+      text: '강의 분야별 선호도',
       subtext: '트렌드: 상승 🔼 안정 ➡️ 하락 🔽',
       left: 'center',
       top: '5%',

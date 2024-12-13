@@ -9,6 +9,7 @@
     --text-secondary: #5f6368;
     --border-color: #dadce0;
     --shadow-color: rgba(60, 64, 67, 0.1);
+    --ag-row-hover-color: rgba(242, 250, 252, 1);
     --card-radius: 12px;
 }
 
@@ -22,7 +23,7 @@ body {
 }
 
 .dashboard-container {
-    max-width: 1600px;
+    max-width: 1800px;
     margin: 0 auto;
     padding: 0 16px;
 }
@@ -121,6 +122,11 @@ h1 {
 
 .card.wide {
     grid-column: span 2;
+}
+
+.card .ag-theme-alpine {
+    height: calc(100% - 60px);
+    min-height: 200px;
 }
 
 .chart {
@@ -249,7 +255,17 @@ tr:hover {
     --ag-header-background-color: var(--background-color);
     --ag-header-cell-hover-background-color: var(--border-color);
     --ag-header-cell-moving-background-color: var(--border-color);
-    height: 400px;
+    --ag-background-color: var(--background-color);
+    --ag-row-hover-color: var(--ag-row-hover-color);
+    --ag-selected-row-background-color: var(--ag-row-hover-color);
     width: 100%;
     margin-top: 16px;
+}
+
+.ag-theme-alpine .ag-row {
+    background-color: white;
+}
+
+.ag-theme-alpine .ag-row:hover {
+    background-color: var(--ag-row-hover-color) !important;
 }
