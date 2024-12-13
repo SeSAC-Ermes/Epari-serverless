@@ -5,7 +5,7 @@ import morgan from 'morgan';
 import compression from 'compression';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import fs from 'fs/promises';
+import { loadStatisticsFromS3} from "../utils/s3-loader.js";
 
 // 기본 설정
 const __filename = fileURLToPath(import.meta.url);
@@ -44,11 +44,15 @@ const isValidDate = (dateString) => {
  */
 const loadStatisticsData = async (type, date) => {
   try {
-    const filePath = join(JSONS_DIR, `statistics-instructor-${type}-${date}.json`);
-    console.log(`Loading ${type} statistics:`, filePath);
-    const data = await fs.readFile(filePath, 'utf-8');
-    return JSON.parse(data);
-  } catch {
+    console.log(`Loading ${type} statistics for date ${date}`);
+    const data = await loadStatisticsFromS3(type, date);
+    if (!data) {
+      console.log(`No data found for ${type} on ${date}`);
+      return null;
+    }
+    return data;
+  } catch (error) {
+    console.error(`Error loading ${type} statistics:`, error);
     return null;
   }
 };

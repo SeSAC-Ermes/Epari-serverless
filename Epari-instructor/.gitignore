@@ -10,7 +10,7 @@ node_modules/
 jsons/
 
 # 환경 설정 파일
-.env
+backend/.env
 .env.local
 .env.*.local
 
