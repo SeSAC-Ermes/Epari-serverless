@@ -245,8 +245,8 @@ function scheduleCollection() {
   // 즉시 실행
   collectCoursePreferenceStatistics();
 
-  // 15초마다 실행 (테스트용)
-  const FIFTEEN_SECONDS = 15 * 1000;
+  // 1시간 마다
+  const FIFTEEN_SECONDS = 60 * 60 * 1000;
   setInterval(collectCoursePreferenceStatistics, FIFTEEN_SECONDS);
 }
 
