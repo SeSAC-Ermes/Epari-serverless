@@ -1,13 +1,8 @@
-import { readFile, writeFile } from 'fs/promises';
-import { dirname, join } from 'path';
+import { uploadToS3 } from './utils/s3-uploader.js';
+import { loadStatisticsFromS3 } from './utils/s3-loader.js';
 import dotenv from 'dotenv';
-import { fileURLToPath } from 'url';
-import { existsSync } from 'fs';
 
 dotenv.config();
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 /**
  * 랜덤 주차별 성적 데이터 생성
@@ -32,7 +27,7 @@ function generateWeeklyScores() {
 }
 
 /**
- * 현재 날짜로 파일명 생성하고 데이터 저장
+ * 주차별 성적 통계 데이터를 생성하고 S3에 저장하는 함수
  */
 async function collectWeeklyScoreStatistics() {
   const now = new Date();
@@ -44,26 +39,28 @@ async function collectWeeklyScoreStatistics() {
     statistics_list: []
   };
 
-  // 새로운 통계 데이터
   const newStatistics = {
     timestamp: now.toISOString(),
     statistics: stats
   };
 
   try {
-    const saveFolder = process.env.SAVEFOLDER || 'jsons';
-    const filePath = join(__dirname, saveFolder, fileName);
+    // 기존 데이터 로드
+    const existingData = await loadStatisticsFromS3('weekly-scores', now.toISOString().slice(0, 10).replace(/-/g, ''));
 
-    const existingData = await loadExistingData(filePath);
+    let dataToSave;
     if (existingData) {
       existingData.statistics_list.push(newStatistics);
-      await writeFile(filePath, JSON.stringify(existingData, null, 2));
+      dataToSave = existingData;
     } else {
       scoreData.statistics_list.push(newStatistics);
-      await writeFile(filePath, JSON.stringify(scoreData, null, 2));
+      dataToSave = scoreData;
     }
 
-    console.log(`통계가 성공적으로 저장되었습니다: ${filePath}`);
+    // S3에 저장
+    await uploadToS3('weekly-scores', fileName, dataToSave);
+
+    console.log(`통계가 성공적으로 저장되었습니다: weekly-scores/${fileName}`);
     console.log('주차별 평균 성적:');
     stats.weeklyScores.forEach(score => {
       console.log(`${score.week}: ${score.averageScore}점`);
@@ -71,18 +68,6 @@ async function collectWeeklyScoreStatistics() {
   } catch (error) {
     console.error('통계 저장 중 오류 발생:', error);
   }
-}
-
-async function loadExistingData(filePath) {
-  try {
-    if (existsSync(filePath)) {
-      const fileContent = await readFile(filePath, 'utf8');
-      return JSON.parse(fileContent);
-    }
-  } catch (error) {
-    console.error('기존 데이터 로드 중 오류 발생:', error);
-  }
-  return null;
 }
 
 // 1시간마다 실행

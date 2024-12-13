@@ -1,13 +1,8 @@
-import { readFile, writeFile } from 'fs/promises';
-import { dirname, join } from 'path';
+import { uploadToS3 } from './utils/s3-uploader.js';
+import { loadStatisticsFromS3 } from './utils/s3-loader.js';
 import dotenv from 'dotenv';
-import { fileURLToPath } from 'url';
-import { existsSync } from 'fs';
 
 dotenv.config();
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 /**
  * 학생 데이터 생성
@@ -23,18 +18,11 @@ function generateStudentData() {
   ];
 
   const students = studentNames.map(name => {
-    // 출석률: 91~99% 사이
     const attendanceRate = 91 + Math.random() * 8;
-
-    // 시험 평균: 82~95점 사이
     const examAverage = 82 + Math.random() * 13;
-
-    // 최근 시험 점수: 시험 평균 ±5점
     const recentExamScore = Math.max(0, Math.min(100,
         examAverage + (Math.random() * 10 - 5)
     ));
-
-    // 과제 제출 수: 7~10개
     const submittedAssignments = 7 + Math.floor(Math.random() * 4);
     const totalAssignments = 10;
 
@@ -45,7 +33,7 @@ function generateStudentData() {
       recent_exam: {
         date: "2024-12-01",
         score: Math.round(recentExamScore),
-        class_rank: 0  // 나중에 계산
+        class_rank: 0
       },
       assignment_status: {
         submitted: submittedAssignments,
@@ -79,7 +67,7 @@ function generateStudentData() {
 }
 
 /**
- * 학생 통계 데이터 수집 및 저장
+ * 학생 통계 데이터를 생성하고 S3에 저장하는 함수
  */
 async function collectStudentStatistics() {
   const now = new Date();
@@ -98,37 +86,28 @@ async function collectStudentStatistics() {
   };
 
   try {
-    const saveFolder = process.env.SAVEFOLDER || 'jsons';
-    const filePath = join(__dirname, saveFolder, fileName);
+    // 기존 데이터 로드
+    const existingData = await loadStatisticsFromS3('students', now.toISOString().slice(0, 10).replace(/-/g, ''));
 
-    const existingData = await loadExistingData(filePath);
+    let dataToSave;
     if (existingData) {
       existingData.student_records.push(newStatistics);
-      await writeFile(filePath, JSON.stringify(existingData, null, 2));
+      dataToSave = existingData;
     } else {
       studentData.student_records.push(newStatistics);
-      await writeFile(filePath, JSON.stringify(studentData, null, 2));
+      dataToSave = studentData;
     }
 
-    console.log(`통계가 성공적으로 저장되었습니다: ${filePath}`);
+    // S3에 저장
+    await uploadToS3('students', fileName, dataToSave);
+
+    console.log(`통계가 성공적으로 저장되었습니다: students/${fileName}`);
     console.log(`총 학생 수: ${classSummary.total_students}명`);
     console.log(`평균 출석률: ${classSummary.average_attendance}%`);
     console.log(`평균 시험 점수: ${classSummary.average_exam_score}점`);
   } catch (error) {
     console.error('통계 저장 중 오류 발생:', error);
   }
-}
-
-async function loadExistingData(filePath) {
-  try {
-    if (existsSync(filePath)) {
-      const fileContent = await readFile(filePath, 'utf8');
-      return JSON.parse(fileContent);
-    }
-  } catch (error) {
-    console.error('기존 데이터 로드 중 오류 발생:', error);
-  }
-  return null;
 }
 
 // 1시간마다 실행

@@ -1,24 +1,14 @@
-import { writeFile, readFile } from 'fs/promises';
-import { join } from 'path';
+import { uploadToS3 } from './utils/s3-uploader.js';
+import { loadStatisticsFromS3 } from './utils/s3-loader.js';
 import dotenv from 'dotenv';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-import { existsSync } from 'fs';
 
 dotenv.config();
-
-/**
- * 데이터 생성 및 관리
- * jsons 폴더에 날짜별 json 파일 저장
- */
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 /**
  * 랜덤 데이터 생성
  */
 function generateRandomStatistics() {
-  const totalStudents = 30; // 고정된 총 학생 수
+  const totalStudents = 30;
   const submissionRate = Math.floor(Math.random() * (100 - 60 + 1)) + 60;
   const submittedCount = Math.round((totalStudents * submissionRate) / 100);
   const notSubmittedCount = totalStudents - submittedCount;
@@ -47,11 +37,7 @@ function generateRandomStatistics() {
 }
 
 /**
- * 현재 날짜로 파일명 생성
- * generateRandomStatistics 호출하여 랜덤 데이터 생성
- * 데이터 객체 구조 생성
- * 파일 저장 위치 설정
- * 기존 데이터가 있으면 히스토리에 추가
+ * 과제 통계 데이터를 생성하고 S3에 저장하는 함수
  */
 async function collectAssignmentStatistics() {
   const now = new Date();
@@ -63,7 +49,6 @@ async function collectAssignmentStatistics() {
     statistics_list: [] // 통계 데이터 배열
   };
 
-  // 새로운 통계 데이터
   const newStatistics = {
     timestamp: now.toISOString(),
     statistics: {
@@ -75,21 +60,22 @@ async function collectAssignmentStatistics() {
   };
 
   try {
-    const saveFolder = process.env.SAVEFOLDER || 'jsons';
-    const filePath = join(__dirname, saveFolder, fileName);
+    // 기존 데이터 로드
+    const existingData = await loadStatisticsFromS3('assignment', now.toISOString().slice(0, 10).replace(/-/g, ''));
 
-    const existingData = await loadExistingData(filePath);
+    let dataToSave;
     if (existingData) {
-      // 기존 데이터가 있으면 새 통계를 추가
       existingData.statistics_list.push(newStatistics);
-      await writeFile(filePath, JSON.stringify(existingData, null, 2));
+      dataToSave = existingData;
     } else {
-      // 새 파일 생성
       assignmentData.statistics_list.push(newStatistics);
-      await writeFile(filePath, JSON.stringify(assignmentData, null, 2));
+      dataToSave = assignmentData;
     }
 
-    console.log(`통계가 성공적으로 저장되었습니다: ${filePath}`);
+    // S3에 저장
+    await uploadToS3('assignment', fileName, dataToSave);
+
+    console.log(`통계가 성공적으로 저장되었습니다: assignment/${fileName}`);
     console.log(`총 학생 수: ${stats.totalStudents}명`);
     console.log(`제출율: ${stats.submissionRate}%`);
     console.log(`제출: ${stats.assignmentStatus[0].count}명, 미제출: ${stats.assignmentStatus[1].count}명`);
@@ -98,21 +84,8 @@ async function collectAssignmentStatistics() {
   }
 }
 
-async function loadExistingData(filePath) {
-  try {
-    if (existsSync(filePath)) {
-      const fileContent = await readFile(filePath, 'utf8');
-      return JSON.parse(fileContent);
-    }
-  } catch (error) {
-    console.error('기존 데이터 로드 중 오류 발생:', error);
-  }
-  return null;
-}
-
 // 1시간마다 실행
 const ONE_HOUR = 1000 * 60 * 60;
-// const ONE_HOUR = 1000 * 60 * 60;
 setInterval(collectAssignmentStatistics, ONE_HOUR);
 
 // 초기 실행

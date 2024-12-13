@@ -1,13 +1,8 @@
-import { readFile, writeFile } from 'fs/promises';
-import { dirname, join } from 'path';
+import { uploadToS3 } from './utils/s3-uploader.js';
+import { loadStatisticsFromS3 } from './utils/s3-loader.js';
 import dotenv from 'dotenv';
-import { fileURLToPath } from 'url';
-import { existsSync } from 'fs';
 
 dotenv.config();
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 /**
  * 현재 과제 데이터 생성
@@ -41,7 +36,7 @@ function generateCurrentAssignmentData() {
 }
 
 /**
- * 현재 날짜로 파일명 생성하고 데이터 저장
+ * 현재 과제 통계 데이터를 생성하고 S3에 저장하는 함수
  */
 async function collectCurrentAssignmentStatistics() {
   const now = new Date();
@@ -53,7 +48,6 @@ async function collectCurrentAssignmentStatistics() {
     statistics_list: []
   };
 
-  // 새로운 통계 데이터
   const newStatistics = {
     timestamp: now.toISOString(),
     statistics: {
@@ -65,37 +59,28 @@ async function collectCurrentAssignmentStatistics() {
   };
 
   try {
-    const saveFolder = process.env.SAVEFOLDER || 'jsons';
-    const filePath = join(__dirname, saveFolder, fileName);
+    // 기존 데이터 로드
+    const existingData = await loadStatisticsFromS3('current-assignment', now.toISOString().slice(0, 10).replace(/-/g, ''));
 
-    const existingData = await loadExistingData(filePath);
+    let dataToSave;
     if (existingData) {
       existingData.statistics_list.push(newStatistics);
-      await writeFile(filePath, JSON.stringify(existingData, null, 2));
+      dataToSave = existingData;
     } else {
       assignmentData.statistics_list.push(newStatistics);
-      await writeFile(filePath, JSON.stringify(assignmentData, null, 2));
+      dataToSave = assignmentData;
     }
 
-    console.log(`통계가 성공적으로 저장되었습니다: ${filePath}`);
+    // S3에 저장
+    await uploadToS3('current-assignment', fileName, dataToSave);
+
+    console.log(`통계가 성공적으로 저장되었습니다: current-assignment/${fileName}`);
     console.log(`총 학생 수: ${stats.totalStudents}명`);
     console.log(`제출율: ${stats.submissionRate}%`);
     console.log(`제출: ${stats.assignmentStatus[0].count}명, 미제출: ${stats.assignmentStatus[1].count}명`);
   } catch (error) {
     console.error('통계 저장 중 오류 발생:', error);
   }
-}
-
-async function loadExistingData(filePath) {
-  try {
-    if (existsSync(filePath)) {
-      const fileContent = await readFile(filePath, 'utf8');
-      return JSON.parse(fileContent);
-    }
-  } catch (error) {
-    console.error('기존 데이터 로드 중 오류 발생:', error);
-  }
-  return null;
 }
 
 // 1시간마다 실행
