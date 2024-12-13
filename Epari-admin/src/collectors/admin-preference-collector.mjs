@@ -136,11 +136,13 @@ async function collectCoursePreferenceStatistics() {
       });
 
       finalData = {
-        ...existingData,
+        timestamp: now.toISOString(),  // 최상위 타임스탬프 추가
+        historical_data: existingData.historical_data,
         current_data: preferenceData
       };
     } else {
       finalData = {
+        timestamp: now.toISOString(),
         historical_data: [{
           timestamp: now.toISOString(),
           data: preferenceData
