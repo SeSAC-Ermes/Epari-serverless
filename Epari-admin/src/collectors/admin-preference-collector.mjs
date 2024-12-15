@@ -2,6 +2,7 @@ import { writeFile, readFile, access } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import dotenv from 'dotenv';
+import { uploadJsonToS3 } from '../utils/s3-uploader.mjs';
 
 // ESM에서의 __dirname 대체
 const __filename = fileURLToPath(import.meta.url);
@@ -235,8 +236,18 @@ async function collectCoursePreferenceStatistics() {
 
     await writeFile(filePath, JSON.stringify(finalData, null, 2));
     console.log(`선호도 통계가 저장되었습니다: ${filePath}`);
+
+    const uploadResult = await uploadJsonToS3(
+        finalData,
+        'http://localhost:3000/api/admin/courses-preference',
+        process.env.AWS_BUCKET_NAME
+    );
+
+    if (uploadResult.success) {
+      console.log('선호도 통계가 S3에 업로드되었습니다:', uploadResult.path);
+    }
   } catch (error) {
-    console.error('선호도 통계 저장 중 오류 발생:', error);
+    console.error('선호도 통계 처리 중 오류 발생:', error);
   }
 }
 
