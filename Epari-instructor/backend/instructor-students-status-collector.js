@@ -1,5 +1,4 @@
-import { uploadToS3 } from './utils/s3-uploader.js';
-import { loadStatisticsFromS3 } from './utils/s3-loader.js';
+import { statisticsRepository } from './utils/statistics-repository.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -67,46 +66,25 @@ function generateStudentData() {
 }
 
 /**
- * 학생 통계 데이터를 생성하고 S3에 저장하는 함수
+ * 학생 통계 데이터를 생성하고 DynamoDB에 저장하는 함수
  */
 async function collectStudentStatistics() {
-  const now = new Date();
-  const fileName = `statistics-instructor-students-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}.json`;
-
-  const { students, classSummary } = generateStudentData();
-
-  const studentData = {
-    student_records: []
-  };
-
-  const newStatistics = {
-    timestamp: now.toISOString(),
-    students,
-    class_summary: classSummary
-  };
-
   try {
-    // 기존 데이터 로드
-    const existingData = await loadStatisticsFromS3('students', now.toISOString().slice(0, 10).replace(/-/g, ''));
+    const { students, classSummary } = generateStudentData();
 
-    let dataToSave;
-    if (existingData) {
-      existingData.student_records.push(newStatistics);
-      dataToSave = existingData;
-    } else {
-      studentData.student_records.push(newStatistics);
-      dataToSave = studentData;
-    }
+    // DynamoDB에 통계 저장
+    await statisticsRepository.saveStatistics('students', {
+      students,
+      class_summary: classSummary
+    });
 
-    // S3에 저장
-    await uploadToS3('students', fileName, dataToSave);
-
-    console.log(`통계가 성공적으로 저장되었습니다: students/${fileName}`);
+    console.log(`학생 통계가 저장되었습니다`);
     console.log(`총 학생 수: ${classSummary.total_students}명`);
     console.log(`평균 출석률: ${classSummary.average_attendance}%`);
     console.log(`평균 시험 점수: ${classSummary.average_exam_score}점`);
+    console.log(`과제 완료율: ${classSummary.assignment_completion_rate}%`);
   } catch (error) {
-    console.error('통계 저장 중 오류 발생:', error);
+    console.error('학생 통계 저장 중 오류 발생:', error);
   }
 }
 
