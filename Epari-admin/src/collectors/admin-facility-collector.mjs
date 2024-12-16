@@ -3,6 +3,7 @@ import { dirname, join } from 'node:path';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'node:url';
 import { existsSync } from 'node:fs';
+import { uploadJsonToS3 } from '../utils/s3-uploader.mjs';
 
 dotenv.config();
 
@@ -132,9 +133,18 @@ async function collectFacilityStatistics() {
       await writeFile(filePath, JSON.stringify(currentStats, null, 2));
     }
 
-    console.log(`통계가 성공적으로 저장되었습니다: ${filePath}`);
+    const finalData = existingData || currentStats;
+    const uploadResult = await uploadJsonToS3(
+        finalData,
+        'http://localhost:3000/api/admin/courses-active',
+        process.env.AWS_BUCKET_NAME
+    );
+
+    if (uploadResult.success) {
+      console.log('시설 사용 통계가 S3에 업로드되었습니다:', uploadResult.path);
+    }
   } catch (error) {
-    console.error('통계 저장 중 오류 발생:', error);
+    console.error('통계 처리 중 오류 발생:', error);
   }
 }
 

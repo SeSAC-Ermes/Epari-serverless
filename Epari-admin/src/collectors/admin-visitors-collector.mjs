@@ -3,6 +3,7 @@ import { dirname, join } from 'node:path';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'node:url';
 import { existsSync } from 'node:fs';
+import { uploadJsonToS3 } from '../utils/s3-uploader.mjs';
 
 dotenv.config();
 
@@ -150,6 +151,16 @@ async function collectVisitorStatistics() {
 
       await writeFile(filePath, JSON.stringify(existingData, null, 2));
       console.log(`방문자 통계가 업데이트되었습니다: ${filePath}`);
+    }
+
+    const uploadResult = await uploadJsonToS3(
+        existingData || currentStats,
+        'http://localhost:3000/api/admin/visitors-hourly',
+        process.env.AWS_BUCKET_NAME
+    );
+
+    if (uploadResult.success) {
+      console.log('방문자 통계가 S3에 업로드되었습니다:', uploadResult.path);
     }
   } catch (error) {
     console.error('방문자 통계 저장 중 오류 발생:', error);

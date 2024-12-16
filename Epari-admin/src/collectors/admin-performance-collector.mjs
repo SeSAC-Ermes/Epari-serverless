@@ -2,6 +2,7 @@ import { writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'node:url';
+import { uploadJsonToS3 } from '../utils/s3-uploader.mjs';
 
 dotenv.config();
 
@@ -132,6 +133,16 @@ async function collectMonthlyPerformance() {
 
     await writeFile(filePath, JSON.stringify(performanceData, null, 2));
     console.log(`${year}년 ${month}월 성과 통계가 저장되었습니다: ${filePath}`);
+
+    const uploadResult = await uploadJsonToS3(
+        performanceData,
+        'http://localhost:3000/api/admin/courses-employment-retention',
+        process.env.AWS_BUCKET_NAME
+    );
+
+    if (uploadResult.success) {
+      console.log(`${year}년 ${month}월 성과 통계가 S3에 업로드되었습니다:`, uploadResult.path);
+    }
 
   } catch (error) {
     console.error('성과 통계 저장 중 오류 발생:', error);

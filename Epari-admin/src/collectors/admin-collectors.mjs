@@ -1,3 +1,6 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import './admin-courses-collector.mjs';
 import './admin-facility-collector.mjs';
 import './admin-visitors-collector.mjs';
