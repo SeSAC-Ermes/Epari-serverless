@@ -168,7 +168,7 @@ async function collectVisitorStatistics() {
 }
 
 // 5분마다 데이터 수집
-const FIVE_MINUTES = 5 * 60 * 1000;
+const FIVE_MINUTES = 60 * 60 * 1000;
 setInterval(collectVisitorStatistics, FIVE_MINUTES);
 
 await collectVisitorStatistics();

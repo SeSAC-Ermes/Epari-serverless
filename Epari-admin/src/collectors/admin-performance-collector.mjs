@@ -1,13 +1,7 @@
-import { writeFile } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
 import dotenv from 'dotenv';
-import { fileURLToPath } from 'node:url';
-import { uploadJsonToS3 } from '../utils/s3-uploader.mjs';
+import { saveToDatabase } from '../utils/dynamodb-utils.mjs';
 
 dotenv.config();
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 // 과거 데이터 (7월부터 11월까지의 실제 데이터)
 const historicalData = {
@@ -97,12 +91,8 @@ async function collectMonthlyPerformance() {
   const now = new Date();
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, '0');
-  const fileName = `statistics-course-performance-${year}${month}.json`;
 
   try {
-    const saveFolder = process.env.SAVEFOLDER ?? 'jsons';
-    const filePath = join(__dirname, '..', saveFolder, fileName);
-
     // 현재 달의 새로운 데이터 생성
     const currentMonthData = {
       employment: {
@@ -123,7 +113,10 @@ async function collectMonthlyPerformance() {
 
     // 전체 데이터 구성
     const performanceData = {
-      timestamp: now.toISOString(),
+      timestamp: {
+        created_at: now.toISOString(),
+        period: `${year}-${month}`
+      },
       historical_data: historicalData,
       current_month: {
         period: `${year}-${month}`,
@@ -131,17 +124,14 @@ async function collectMonthlyPerformance() {
       }
     };
 
-    await writeFile(filePath, JSON.stringify(performanceData, null, 2));
-    console.log(`${year}년 ${month}월 성과 통계가 저장되었습니다: ${filePath}`);
-
-    const uploadResult = await uploadJsonToS3(
-        performanceData,
-        'http://localhost:3000/api/admin/courses-employment-retention',
-        process.env.AWS_BUCKET_NAME
+    const result = await saveToDatabase(
+        process.env.DYNAMODB_TABLE_NAME,
+        'PERFORMANCE',
+        performanceData
     );
 
-    if (uploadResult.success) {
-      console.log(`${year}년 ${month}월 성과 통계가 S3에 업로드되었습니다:`, uploadResult.path);
+    if (result.success) {
+      console.log(`${year}년 ${month}월 성과 통계가 DynamoDB에 저장되었습니다:`, result.id);
     }
 
   } catch (error) {
@@ -155,15 +145,13 @@ function scheduleCollection() {
   const night = new Date(
       now.getFullYear(),
       now.getMonth(),
-      now.getDate() + 1, // 다음날
-      0, 0, 0 // 자정
+      now.getDate() + 1,
+      0, 0, 0
   );
   const msToMidnight = night.getTime() - now.getTime();
 
-  // 자정에 첫 실행
   setTimeout(() => {
     collectMonthlyPerformance();
-    // 이후 매일 자정마다 실행
     setInterval(collectMonthlyPerformance, 24 * 60 * 60 * 1000);
   }, msToMidnight);
 }
