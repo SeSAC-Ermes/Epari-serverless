@@ -4,7 +4,14 @@ async function loadStudentData() {
     const API_BASE_URL = 'http://localhost:3001';
     const response = await fetch(`${API_BASE_URL}/api/v1/statistics/students/${yyyyMMdd}`);
     const data = await response.json();
-    return data.student_records[0];
+
+    return {
+      student_records: [{
+        timestamp: data.createdAt,
+        students: data.statistics.students,
+        class_summary: data.statistics.class_summary
+      }]
+    };
   } catch (error) {
     console.error('Failed to load student data:', error);
     return null;
@@ -87,8 +94,8 @@ async function initStudentDashboard() {
     return;
   }
 
-  displayClassSummary(data.class_summary);
-  initializeAgGrid(data);
+  displayClassSummary(data.student_records[0]);  // 수정된 부분
+  initializeAgGrid(data.student_records[0]);     // 수정된 부분
 }
 
 document.addEventListener('DOMContentLoaded', initStudentDashboard);

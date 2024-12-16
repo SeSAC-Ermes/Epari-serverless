@@ -4,7 +4,13 @@ async function loadWeeklyScoresData() {
     const API_BASE_URL = 'http://localhost:3001';
     const response = await fetch(`${API_BASE_URL}/api/v1/statistics/weekly-scores/${yyyyMMdd}`);
     const data = await response.json();
-    return data.statistics_list[data.statistics_list.length - 1];
+
+    return {
+      statistics_list: [{
+        timestamp: data.createdAt,
+        statistics: data.statistics
+      }]
+    };
   } catch (error) {
     console.error('데이터 로드 실패:', error);
     return null;
@@ -117,7 +123,7 @@ async function initWeeklyScoresDashboard() {
   }
 
   const charts = {
-    weeklyScores: renderWeeklyScoresChart(data)
+    weeklyScores: renderWeeklyScoresChart(data.statistics_list[0])  // 수정된 부분
   };
 
   document.querySelectorAll('.chart').forEach(el => {

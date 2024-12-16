@@ -16,11 +16,16 @@ echarts.registerTheme('custom', chartTheme);
 async function loadExamData() {
   try {
     const yyyyMMdd = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    // const response = await fetch(`/jsons/statistics-instructor-exam-${yyyyMMdd}.json`);
     const API_BASE_URL = 'http://localhost:3001';
-    const response = await fetch(`${API_BASE_URL}/api/v1/statistics/exam/${yyyyMMdd}`); // TODO: URI 강사 명시 고려
+    const response = await fetch(`${API_BASE_URL}/api/v1/statistics/exam/${yyyyMMdd}`);
     const data = await response.json();
-    return data.statistics_list[data.statistics_list.length - 1];
+
+    return {
+      statistics_list: [{
+        timestamp: data.createdAt,
+        statistics: data.statistics
+      }]
+    };
   } catch (error) {
     console.error('Failed to load data:', error);
     return null;
@@ -99,11 +104,9 @@ function debounce(func, wait) {
 
 // 대시보드 초기화 및 차트 렌더링
 async function initDashboard() {
-  // 로딩 상태 표시
   const chartElements = document.querySelectorAll('.chart');
   chartElements.forEach(el => el.classList.add('loading'));
 
-  // 데이터 로드
   const data = await loadExamData();
   if (!data) {
     chartElements.forEach(el => {
@@ -113,14 +116,13 @@ async function initDashboard() {
     return;
   }
 
-  // 차트 렌더링 및 기본 지표 업데이트
+  // 여기가 핵심: data.statistics_list[0] 대신 data를 직접 사용
   const charts = {
-    examStatus: renderExamStatusChart(data)
+    examStatus: renderExamStatusChart(data.statistics_list[0])  // 변경된 부분
   };
   chartElements.forEach(el => el.classList.remove('loading'));
-  updateBasicMetrics(data);
+  updateBasicMetrics(data.statistics_list[0]);  // 여기도 변경
 
-  // 리사이즈 이벤트 핸들러 등록
   const handleResize = debounce(() => {
     Object.values(charts).forEach(chart => chart.resize());
   }, 250);
