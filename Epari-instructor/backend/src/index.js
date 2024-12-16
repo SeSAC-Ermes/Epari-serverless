@@ -5,13 +5,12 @@ import morgan from 'morgan';
 import compression from 'compression';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { loadStatisticsFromS3} from "../utils/s3-loader.js";
+import { statisticsRepository } from "../utils/statistics-repository.js";
 
 // 기본 설정
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const PORT = 3001;
-const JSONS_DIR = join(__dirname, '../jsons');
 
 // Express 앱 초기화
 const app = express();
@@ -39,24 +38,6 @@ const isValidDate = (dateString) => {
       date.getDate() === day;
 };
 
-/**
- * 통계 데이터를 로드하는 공통 함수
- */
-const loadStatisticsData = async (type, date) => {
-  try {
-    console.log(`Loading ${type} statistics for date ${date}`);
-    const data = await loadStatisticsFromS3(type, date);
-    if (!data) {
-      console.log(`No data found for ${type} on ${date}`);
-      return null;
-    }
-    return data;
-  } catch (error) {
-    console.error(`Error loading ${type} statistics:`, error);
-    return null;
-  }
-};
-
 // 공통 미들웨어: 날짜 유효성 검사
 const validateDate = (req, res, next) => {
   const { date } = req.params;
@@ -69,47 +50,72 @@ const validateDate = (req, res, next) => {
 // API 라우트 설정
 // 시험 통계
 app.get('/api/v1/statistics/exam/:date', validateDate, async (req, res) => {
-  const data = await loadStatisticsData('exam', req.params.date);
-  if (!data) {
-    return res.status(404).json({ error: 'Exam statistics data not found' });
+  try {
+    const data = await statisticsRepository.getLatestStatistics('exam', req.params.date);
+    if (!data) {
+      return res.status(404).json({ error: 'Exam statistics data not found' });
+    }
+    res.json(data);
+  } catch (error) {
+    console.error('Error fetching exam statistics:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
-  res.json(data);
 });
 
 // 주차별 성적 통계
 app.get('/api/v1/statistics/weekly-scores/:date', validateDate, async (req, res) => {
-  const data = await loadStatisticsData('weekly-scores', req.params.date);
-  if (!data) {
-    return res.status(404).json({ error: 'Weekly scores statistics data not found' });
+  try {
+    const data = await statisticsRepository.getLatestStatistics('weekly-scores', req.params.date);
+    if (!data) {
+      return res.status(404).json({ error: 'Weekly scores statistics data not found' });
+    }
+    res.json(data);
+  } catch (error) {
+    console.error('Error fetching weekly scores statistics:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
-  res.json(data);
 });
 
 // 과제 통계
 app.get('/api/v1/statistics/assignment/:date', validateDate, async (req, res) => {
-  const data = await loadStatisticsData('assignment', req.params.date);
-  if (!data) {
-    return res.status(404).json({ error: 'Assignment statistics data not found' });
+  try {
+    const data = await statisticsRepository.getLatestStatistics('assignment', req.params.date);
+    if (!data) {
+      return res.status(404).json({ error: 'Assignment statistics data not found' });
+    }
+    res.json(data);
+  } catch (error) {
+    console.error('Error fetching assignment statistics:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
-  res.json(data);
 });
 
 // 현재 과제 통계
 app.get('/api/v1/statistics/current-assignment/:date', validateDate, async (req, res) => {
-  const data = await loadStatisticsData('current-assignment', req.params.date);
-  if (!data) {
-    return res.status(404).json({ error: 'Current assignment statistics data not found' });
+  try {
+    const data = await statisticsRepository.getLatestStatistics('current-assignment', req.params.date);
+    if (!data) {
+      return res.status(404).json({ error: 'Current assignment statistics data not found' });
+    }
+    res.json(data);
+  } catch (error) {
+    console.error('Error fetching current assignment statistics:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
-  res.json(data);
 });
 
 // 학생 통계
 app.get('/api/v1/statistics/students/:date', validateDate, async (req, res) => {
-  const data = await loadStatisticsData('students', req.params.date);
-  if (!data) {
-    return res.status(404).json({ error: 'Student statistics data not found' });
+  try {
+    const data = await statisticsRepository.getLatestStatistics('students', req.params.date);
+    if (!data) {
+      return res.status(404).json({ error: 'Student statistics data not found' });
+    }
+    res.json(data);
+  } catch (error) {
+    console.error('Error fetching student statistics:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
-  res.json(data);
 });
 
 // 404 에러 핸들링

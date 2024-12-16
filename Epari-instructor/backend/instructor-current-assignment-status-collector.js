@@ -1,5 +1,4 @@
-import { uploadToS3 } from './utils/s3-uploader.js';
-import { loadStatisticsFromS3 } from './utils/s3-loader.js';
+import { statisticsRepository } from './utils/statistics-repository.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -8,8 +7,8 @@ dotenv.config();
  * 현재 과제 데이터 생성
  */
 function generateCurrentAssignmentData() {
-  const totalStudents = 30; // 고정된 총 학생 수
-  const submittedCount = 5; // 고정된 제출 학생 수
+  const totalStudents = 30;
+  const submittedCount = 5;
   const notSubmittedCount = totalStudents - submittedCount;
 
   // 현재 과제 정보
@@ -36,50 +35,26 @@ function generateCurrentAssignmentData() {
 }
 
 /**
- * 현재 과제 통계 데이터를 생성하고 S3에 저장하는 함수
+ * 현재 과제 통계 데이터를 생성하고 DynamoDB에 저장하는 함수
  */
 async function collectCurrentAssignmentStatistics() {
-  const now = new Date();
-  const fileName = `statistics-instructor-current-assignment-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}.json`;
+  try {
+    const stats = generateCurrentAssignmentData();
 
-  const stats = generateCurrentAssignmentData();
-
-  const assignmentData = {
-    statistics_list: []
-  };
-
-  const newStatistics = {
-    timestamp: now.toISOString(),
-    statistics: {
+    // DynamoDB에 통계 저장
+    await statisticsRepository.saveStatistics('current-assignment', {
       total_students: stats.totalStudents,
       assignment_status: stats.assignmentStatus,
       submission_rate: stats.submissionRate,
       assignment_info: stats.assignmentInfo
-    }
-  };
+    });
 
-  try {
-    // 기존 데이터 로드
-    const existingData = await loadStatisticsFromS3('current-assignment', now.toISOString().slice(0, 10).replace(/-/g, ''));
-
-    let dataToSave;
-    if (existingData) {
-      existingData.statistics_list.push(newStatistics);
-      dataToSave = existingData;
-    } else {
-      assignmentData.statistics_list.push(newStatistics);
-      dataToSave = assignmentData;
-    }
-
-    // S3에 저장
-    await uploadToS3('current-assignment', fileName, dataToSave);
-
-    console.log(`통계가 성공적으로 저장되었습니다: current-assignment/${fileName}`);
+    console.log(`현재 과제 통계가 저장되었습니다`);
     console.log(`총 학생 수: ${stats.totalStudents}명`);
     console.log(`제출율: ${stats.submissionRate}%`);
     console.log(`제출: ${stats.assignmentStatus[0].count}명, 미제출: ${stats.assignmentStatus[1].count}명`);
   } catch (error) {
-    console.error('통계 저장 중 오류 발생:', error);
+    console.error('현재 과제 통계 저장 중 오류 발생:', error);
   }
 }
 

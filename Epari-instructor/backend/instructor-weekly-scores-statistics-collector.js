@@ -1,5 +1,4 @@
-import { uploadToS3 } from './utils/s3-uploader.js';
-import { loadStatisticsFromS3 } from './utils/s3-loader.js';
+import { statisticsRepository } from './utils/statistics-repository.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -27,46 +26,22 @@ function generateWeeklyScores() {
 }
 
 /**
- * 주차별 성적 통계 데이터를 생성하고 S3에 저장하는 함수
+ * 주차별 성적 통계 데이터를 생성하고 DynamoDB에 저장하는 함수
  */
 async function collectWeeklyScoreStatistics() {
-  const now = new Date();
-  const fileName = `statistics-instructor-weekly-scores-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}.json`;
-
-  const stats = generateWeeklyScores();
-
-  const scoreData = {
-    statistics_list: []
-  };
-
-  const newStatistics = {
-    timestamp: now.toISOString(),
-    statistics: stats
-  };
-
   try {
-    // 기존 데이터 로드
-    const existingData = await loadStatisticsFromS3('weekly-scores', now.toISOString().slice(0, 10).replace(/-/g, ''));
+    const stats = generateWeeklyScores();
 
-    let dataToSave;
-    if (existingData) {
-      existingData.statistics_list.push(newStatistics);
-      dataToSave = existingData;
-    } else {
-      scoreData.statistics_list.push(newStatistics);
-      dataToSave = scoreData;
-    }
+    // DynamoDB에 통계 저장
+    await statisticsRepository.saveStatistics('weekly-scores', stats);
 
-    // S3에 저장
-    await uploadToS3('weekly-scores', fileName, dataToSave);
-
-    console.log(`통계가 성공적으로 저장되었습니다: weekly-scores/${fileName}`);
+    console.log(`주차별 성적 통계가 저장되었습니다`);
     console.log('주차별 평균 성적:');
     stats.weeklyScores.forEach(score => {
       console.log(`${score.week}: ${score.averageScore}점`);
     });
   } catch (error) {
-    console.error('통계 저장 중 오류 발생:', error);
+    console.error('주차별 성적 통계 저장 중 오류 발생:', error);
   }
 }
 
