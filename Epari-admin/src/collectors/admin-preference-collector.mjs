@@ -177,8 +177,7 @@ async function collectCoursePreferenceStatistics() {
         domainId: key,
         domainName: domain.name,
         total: domainCourses.reduce((sum, course) => sum + course.activeStudents, 0),
-        courses: domainCourses,
-        color: domain.color
+        courses: domainCourses
       };
     });
 
