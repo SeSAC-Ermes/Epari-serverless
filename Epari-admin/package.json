@@ -8,6 +8,7 @@
     "collector": "node src/collectors/admin-collectors.mjs"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.529.1",
     "ag-grid-community": "^32.3.3",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
