@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from "dotenv";
 import { readJsonFromS3 } from "./src/utils/s3-reader.mjs";
+import {getLatestData} from "./src/utils/dynamodb-utils.mjs";
 
 dotenv.config();
 const app = express();
@@ -14,21 +15,20 @@ app.use(express.static('public'));  // 정적 파일 제공
 // 1. 각 과정별 수강생 현황
 app.get('/api/admin/courses-students', async (req, res) => {
   try {
-    const data = await readJsonFromS3('courses-students', process.env.AWS_BUCKET_NAME);
+    const data = await getLatestData(
+        process.env.DYNAMODB_TABLE_NAME,
+        'COURSE'
+    );
+
+    if (!data) {
+      return res.status(404).json({ error: '데이터가 없습니다' });
+    }
+
     res.json({
       timestamp: data.timestamp,
-      course_statistics: {
-        total_enrollment: data.course_statistics.total_enrollment,
-        course_enrollments: data.course_statistics.course_enrollments
-      }
+      course_statistics: data.data.course_statistics
     });
   } catch (error) {
-    console.log('Full error:', {
-      message: error.message,
-      code: error.Code,
-      key: error.Key,
-      requestId: error.RequestId
-    });
     res.status(500).json({ error: error.message });
   }
 });
@@ -36,11 +36,19 @@ app.get('/api/admin/courses-students', async (req, res) => {
 // 2. 운영중인 과정 현황
 app.get('/api/admin/courses-active', async (req, res) => {
   try {
-    const data = await readJsonFromS3('courses-active', process.env.AWS_BUCKET_NAME);
+    const data = await getLatestData(
+        process.env.DYNAMODB_TABLE_NAME,
+        'FACILITY'
+    );
+
+    if (!data) {
+      return res.status(404).json({ error: '데이터가 없습니다' });
+    }
+
     res.json({
       timestamp: data.timestamp,
       course_statistics: {
-        course_enrollments: data.course_statistics.course_enrollments.map(course => ({
+        course_enrollments: data.data.course_statistics.course_enrollments.map(course => ({
           course_id: course.course_id,
           course_name: course.course_name,
           instructor: course.instructor,
@@ -48,10 +56,11 @@ app.get('/api/admin/courses-active', async (req, res) => {
           room: course.room,
           current_students: course.current_students
         })),
-        facility_status: data.course_statistics.facility_status
+        facility_status: data.data.course_statistics.facility_status
       }
     });
   } catch (error) {
+    console.error('데이터 조회 중 오류 발생:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -86,16 +95,22 @@ app.get('/api/admin/pages-ranking', async (req, res) => {
 // 5. 과정별 취업률 및 이탈률 현황
 app.get('/api/admin/courses-employment-retention', async (req, res) => {
   try {
-    const now = new Date();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const data = await readJsonFromS3(`courses-employment-retention`, process.env.AWS_BUCKET_NAME)
+    const data = await getLatestData(
+        process.env.DYNAMODB_TABLE_NAME,
+        'PERFORMANCE'
+    );
+
+    if (!data) {
+      return res.status(404).json({ error: '데이터가 없습니다' });
+    }
 
     res.json({
       timestamp: data.timestamp,
-      current_month: data.current_month,
-      historical_data: data.historical_data
+      current_month: data.data.current_month,
+      historical_data: data.data.historical_data
     });
   } catch (error) {
+    console.error('데이터 조회 중 오류 발생:', error);
     res.status(500).json({ error: error.message });
   }
 });
