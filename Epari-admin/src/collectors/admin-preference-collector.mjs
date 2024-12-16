@@ -169,8 +169,7 @@ async function collectCoursePreferenceStatistics() {
           courseId: course.id,
           courseName: course.name,
           activeStudents: currentValue,
-          trend: trend,
-          color: adjustColorByTrend(course.color, trend) // 트렌드에 따라 색상 조정
+          trend: trend
         };
       });
 
