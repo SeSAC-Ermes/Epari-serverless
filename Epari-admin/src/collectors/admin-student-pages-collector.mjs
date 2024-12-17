@@ -1,8 +1,4 @@
-import { writeFile, readFile } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
 import dotenv from 'dotenv';
-import { fileURLToPath } from 'node:url';
-import { existsSync } from 'node:fs';
 import { uploadJsonToS3 } from '../utils/s3-uploader.mjs';
 
 dotenv.config();
@@ -69,7 +65,6 @@ async function collectStudentPageStatistics() {
 
   try {
     const saveFolder = process.env.SAVEFOLDER ?? 'jsons';
-    const filePath = join(__dirname, '..', saveFolder, fileName);
 
     const pageData = await generateStudentPageVisitData();
     const sortedPages = pageData.sort((a, b) => b.visits - a.visits);
@@ -104,8 +99,6 @@ async function collectStudentPageStatistics() {
       existingData.historical_data.push(newDataPoint);
       existingData.timestamp = now.toISOString();
       existingData.page_statistics = newDataPoint.data;
-
-      await writeFile(filePath, JSON.stringify(existingData, null, 2));
     } else {
       // 새 파일 생성
       const currentStats = {

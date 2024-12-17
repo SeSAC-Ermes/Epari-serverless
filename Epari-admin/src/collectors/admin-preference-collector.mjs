@@ -1,11 +1,5 @@
-import { writeFile, readFile, access } from 'node:fs/promises';
-import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import dotenv from 'dotenv';
 import { uploadJsonToS3 } from '../utils/s3-uploader.mjs';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 dotenv.config();
 
@@ -69,15 +63,6 @@ function generateRandomEnrollment(baseCount, trend, variation = 0.2) {
   return Math.floor(Math.random() * (maxCount - minCount + 1)) + minCount;
 }
 
-async function fileExists(path) {
-  try {
-    await access(path);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 function getTimeBasedWeight(hour) {
   if (hour < 6) return 0.3;
   if (hour < 9) return 0.8;
@@ -92,7 +77,6 @@ async function collectCoursePreferenceStatistics() {
 
   try {
     const saveFolder = process.env.SAVEFOLDER ?? 'jsons';
-    const filePath = join(__dirname, '..', saveFolder, fileName);
 
     let previousData = null;
     if (await fileExists(filePath)) {
@@ -189,9 +173,6 @@ async function collectCoursePreferenceStatistics() {
         current_data: preferenceData
       };
     }
-
-    await writeFile(filePath, JSON.stringify(finalData, null, 2));
-    console.log(`선호도 통계가 저장되었습니다: ${filePath}`);
 
     const uploadResult = await uploadJsonToS3(
         finalData,

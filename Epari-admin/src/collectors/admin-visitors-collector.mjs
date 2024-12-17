@@ -1,14 +1,8 @@
-import { writeFile, readFile } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
 import dotenv from 'dotenv';
-import { fileURLToPath } from 'node:url';
-import { existsSync } from 'node:fs';
 import { uploadJsonToS3 } from '../utils/s3-uploader.mjs';
 
 dotenv.config();
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 const TOTAL_USERS = 100; // 총 사용자 수 상수 설정
 
 async function loadExistingData(filePath) {
@@ -77,7 +71,6 @@ async function collectVisitorStatistics() {
 
   try {
     const saveFolder = process.env.SAVEFOLDER ?? 'jsons';
-    const filePath = join(__dirname, '..', saveFolder, fileName);
 
     let existingData = await loadExistingData(filePath);
 
@@ -101,9 +94,6 @@ async function collectVisitorStatistics() {
         },
         historical_data: historicalData
       };
-
-      await writeFile(filePath, JSON.stringify(currentStats, null, 2));
-      console.log(`새로운 방문자 통계 파일이 생성되었습니다: ${filePath}`);
     } else {
       // 기존 파일이 있는 경우, 현재 시간대에 맞는 새로운 데이터 생성
       let visitRate;
