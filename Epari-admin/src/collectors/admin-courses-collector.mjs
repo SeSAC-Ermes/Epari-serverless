@@ -1,15 +1,7 @@
-import { writeFile, readFile } from 'node:fs/promises';
-import { join } from 'node:path';
 import dotenv from 'dotenv';
-import { fileURLToPath } from 'node:url';
-import { dirname } from 'node:path';
-import { existsSync } from 'node:fs';
-import { uploadJsonToS3 } from '../utils/s3-uploader.mjs';
+import { saveToDatabase, getLatestData } from '../utils/dynamodb-utils.mjs';
 
 dotenv.config();
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 async function collectCourseStatistics() {
   const now = new Date();
@@ -17,8 +9,6 @@ async function collectCourseStatistics() {
   startDate.setHours(0,0,0,0);
   const endDate = new Date(now);
   endDate.setHours(23,59,59,999);
-
-  const fileName = `statistics-admin-courses-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}.json`;
 
   const currentStats = {
     timestamp: {
@@ -84,66 +74,29 @@ async function collectCourseStatistics() {
           }
         ]
       }
-    },
-    historical_data: []
+    }
   };
 
   try {
-    const saveFolder = process.env.SAVEFOLDER ?? 'jsons';
-    const filePath = join(__dirname, '..', saveFolder, fileName);
-
-    const existingData = await loadExistingData(filePath);
-    if (existingData) {
-      // 기존 데이터가 있으면 historical_data에 새로운 데이터 추가
-      existingData.historical_data.push({
-        timestamp: {
-          created_at: now.toISOString(),
-          period: currentStats.timestamp.period
-        },
-        data: {
-          total_enrollment: currentStats.course_statistics.total_enrollment,
-          course_enrollments: currentStats.course_statistics.course_enrollments
-        }
-      });
-      await writeFile(filePath, JSON.stringify(existingData, null, 2));
-    } else {
-      // 파일이 없으면 현재 데이터로 새 파일 생성
-      const newData = {
-        ...currentStats,
-        historical_data: []  // 빈 historical_data 배열로 시작
-      };
-      await writeFile(filePath, JSON.stringify(newData, null, 2));
-    }
-
-    const uploadResult = await uploadJsonToS3(
-        existingData || newData, // 기존 데이터가 있으면 existingData, 없으면 newData
-        'http://localhost:3000/api/admin/courses-students',
-        process.env.AWS_BUCKET_NAME
+    const result = await saveToDatabase(
+        process.env.DYNAMODB_TABLE_NAME,
+        'COURSE',
+        currentStats
     );
 
-    if (uploadResult.success) {
-      console.log('강의 통계가 S3에 업로드되었습니다:', uploadResult.path);
+    if (result.success) {
+      console.log('강의 통계가 DynamoDB에 저장되었습니다:', result.id);
     }
   } catch (error) {
     console.error('통계 처리 중 오류 발생:', error);
   }
 }
 
-// 기존 데이터 로드 함수
-async function loadExistingData(filePath) {
-  try {
-    if (existsSync(filePath)) {
-      const fileContent = await readFile(filePath, 'utf8');
-      return JSON.parse(fileContent);
-    }
-  } catch (error) {
-    console.error('기존 데이터 로드 중 오류 발생:', error);
-  }
-  return null;
-}
-
 // 실행 로직
 const ONE_HOUR = 60 * 60 * 1000;
 setInterval(collectCourseStatistics, ONE_HOUR);
 
+// 초기 실행
 await collectCourseStatistics();
+
+export default collectCourseStatistics;

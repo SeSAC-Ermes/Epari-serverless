@@ -422,10 +422,12 @@ export function debounce(func, wait) {
 function renderCoursePerformanceChart(performanceData) {
   const chartDom = document.getElementById('coursePerformanceChart');
   const chart = echarts.init(chartDom, 'custom');
+  let currentType = 'employment';  // 여기로 이동!
 
   // 데이터 준비
   const months = Object.keys(performanceData.historical_data)
-      .concat(performanceData.current_month.period);
+      .concat(performanceData.current_month.period)
+      .sort();  // 날짜순 정렬 추가
 
   const courseNames = [
     'MSA 기반 자바 개발자',
@@ -435,13 +437,9 @@ function renderCoursePerformanceChart(performanceData) {
     '빅데이터 과정'
   ];
 
-  // 이탈률 전용 색상 팔레트 설정 - 빨간색 계열로 구분이 잘 되는 색상들
   const dropoutColors = [
-    '#FF6B6B',  // 밝은 빨간색
-    '#FF8787',  // 연한 빨간색
-    '#FA5252',  // 진한 빨간색
-    '#E03131',  // 더 진한 빨간색
-    '#C92A2A'   // 매우 진한 빨간색
+    '#FF6B6B', '#FF8787', '#FA5252',
+    '#E03131', '#C92A2A'
   ];
 
   // 취업률 데이터 구성
@@ -468,94 +466,88 @@ function renderCoursePerformanceChart(performanceData) {
     };
   });
 
-  let currentType = 'employment';
-
-    const getOption = (type) => ({
-        title: {
-            text: type === 'employment' ? '과정별 취업률 현황' : '과정별 이탈률 현황',
-            left: 'center',
-            top: 10,
-            textStyle: {
-                fontSize: 16,
-                fontWeight: 'bold'
-            }
-        },
-        tooltip: {
-            trigger: 'axis',
-            axisPointer: {
-                type: 'shadow'
-            },
-            formatter: function(params) {
-                const monthStr = params[0].axisValue;
-                let result = `${monthStr.split('-')[1]}월<br/>`;
-                params.forEach(param => {
-                    const courseData = param.value[param.seriesName];
-                    const count = courseData.count;
-                    const total = courseData.total;
-                    const percentage = courseData.percentage;
-                    result += `${param.marker} ${param.seriesName}: ${percentage}% (${count}/${total}명)<br/>`;
-                });
-                return result;
-            }
-        },
-        legend: {
-            data: courseNames,
-            bottom: 0,
-            type: 'scroll',
-            textStyle: {
-                fontSize: 12
-            }
-        },
-        grid: {
-            top: 60,
-            left: '3%',
-            right: '4%',
-            bottom: 80,
-            containLabel: true
-        },
-        xAxis: {
-            type: 'category',
-            data: months,
-            axisLabel: {
-                formatter: (value) => {
-                    const [year, month] = value.split('-');
-                    return `${month}월`;
-                }
-            }
-        },
-        yAxis: {
-            type: 'value',
-            axisLabel: {
-                formatter: '{value}%'
-            },
-            max: type === 'employment' ? 100 : 20,
-            splitLine: {
-                show: true,
-                lineStyle: {
-                    type: 'dashed'
-                }
-            }
-        },
-        dataset: {
-            source: type === 'employment' ? employmentData : dropoutData
-        },
-        series: courseNames.map((name, index) => ({
-            name: name,
-            type: 'bar',
-            emphasis: {
-                focus: 'series'
-            },
-            encode: {
-                x: 'period',
-                y: name
-            },
-            itemStyle: {
-                color: type === 'employment' ?
-                    undefined : // 취업률은 기본 차트 컬러
-                    dropoutColors[index] // 이탈률은 지정된 빨간색 계열
-            }
-        }))
-    });
+  const getOption = (type) => ({
+    title: {
+      text: type === 'employment' ? '과정별 취업률 현황' : '과정별 이탈률 현황',
+      left: 'center',
+      top: 10,
+      textStyle: {
+        fontSize: 16,
+        fontWeight: 'bold'
+      }
+    },
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: {
+        type: 'shadow'
+      },
+      formatter: function(params) {
+        const monthStr = params[0].axisValue;
+        let result = `${monthStr.split('-')[1]}월<br/>`;
+        params.forEach(param => {
+          // 직접 값을 사용
+          const value = param.value[param.seriesName];
+          result += `${param.marker} ${param.seriesName}: ${value}%<br/>`;
+        });
+        return result;
+      }
+    },
+    legend: {
+      data: courseNames,
+      bottom: 0,
+      type: 'scroll',
+      textStyle: {
+        fontSize: 12
+      }
+    },
+    grid: {
+      top: 60,
+      left: '3%',
+      right: '4%',
+      bottom: 80,
+      containLabel: true
+    },
+    xAxis: {
+      type: 'category',
+      data: months,
+      axisLabel: {
+        formatter: (value) => {
+          const [year, month] = value.split('-');
+          return `${month}월`;
+        }
+      }
+    },
+    yAxis: {
+      type: 'value',
+      axisLabel: {
+        formatter: '{value}%'
+      },
+      max: type === 'employment' ? 100 : 20,
+      splitLine: {
+        show: true,
+        lineStyle: {
+          type: 'dashed'
+        }
+      }
+    },
+    dataset: {
+      source: type === 'employment' ? employmentData : dropoutData
+    },
+    series: courseNames.map((name, index) => ({
+      name: name,
+      type: 'bar',
+      emphasis: {
+        focus: 'series'
+      },
+      encode: {
+        x: 'period',
+        y: name
+      },
+      itemStyle: {
+        color: type === 'employment' ? undefined : dropoutColors[index]
+      }
+    }))
+  });
 
   // 초기 옵션 설정
   chart.setOption(getOption('employment'));
@@ -563,28 +555,26 @@ function renderCoursePerformanceChart(performanceData) {
   // 버튼 컨테이너 생성 및 스타일링
   const buttonContainer = document.createElement('div');
   buttonContainer.style.cssText = `
-        position: absolute;
-        right: 20px;
-        top: 20px;
-        display: flex;
-        gap: 8px;
-        z-index: 100;
-    `;
+    position: absolute;
+    right: 20px;
+    top: 20px;
+    display: flex;
+    gap: 8px;
+    z-index: 100;
+  `;
 
-  // 취업률 버튼
   const employmentBtn = document.createElement('button');
   employmentBtn.textContent = '취업률';
   employmentBtn.className = 'btn btn-primary active';
   employmentBtn.style.cssText = `
-        padding: 6px 12px;
-        border-radius: 4px;
-        border: none;
-        cursor: pointer;
-        font-size: 14px;
-        transition: all 0.2s;
-    `;
+    padding: 6px 12px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+  `;
 
-  // 이탈률 버튼
   const dropoutBtn = document.createElement('button');
   dropoutBtn.textContent = '이탈률';
   dropoutBtn.className = 'btn btn-primary';
@@ -621,11 +611,8 @@ function renderCoursePerformanceChart(performanceData) {
     updateButtonStates();
   };
 
-  // 버튼을 컨테이너에 추가
   buttonContainer.appendChild(employmentBtn);
   buttonContainer.appendChild(dropoutBtn);
-
-  // 차트 컨테이너에 버튼 컨테이너 추가
   chartDom.parentNode.insertBefore(buttonContainer, chartDom);
 
   return chart;
