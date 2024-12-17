@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-import { saveToDatabase, getLatestData } from '../utils/dynamodb-utils.mjs';
+import { saveToDatabase } from '../utils/dynamodb-utils.mjs';
 
 dotenv.config();
 
