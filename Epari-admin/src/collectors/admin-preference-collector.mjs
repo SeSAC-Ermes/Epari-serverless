@@ -4,17 +4,14 @@ import { fileURLToPath } from 'node:url';
 import dotenv from 'dotenv';
 import { uploadJsonToS3 } from '../utils/s3-uploader.mjs';
 
-// ESM에서의 __dirname 대체
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// dotenv 설정
 dotenv.config();
 
-// 트렌드 계산을 위한 기준값 설정
-const TREND_THRESHOLD = 0.05; // 5% 변동을 기준으로 트렌드 판단
+const TREND_THRESHOLD = 0.05;
 
-// 선호도 데이터 구조 정의 (색상 정보 추가)
+// 색상 정보는 프론트엔드 참조용으로만 유지
 const COURSE_PREFERENCES = {
   'programming': {
     name: '프로그래밍',
@@ -43,35 +40,6 @@ const COURSE_PREFERENCES = {
   }
 };
 
-// 트렌드에 따른 색상 조정 함수
-function adjustColorByTrend(baseColor, trend) {
-  const hex2rgb = (hex) => {
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
-    return [r, g, b];
-  };
-
-  const rgb2hex = (r, g, b) => {
-    return '#' + [r, g, b].map(x => {
-      const hex = Math.min(255, Math.max(0, Math.round(x))).toString(16);
-      return hex.length === 1 ? '0' + hex : hex;
-    }).join('');
-  };
-
-  const [r, g, b] = hex2rgb(baseColor);
-
-  switch (trend) {
-    case 'rising':
-      return rgb2hex(Math.min(255, r * 1.2), Math.min(255, g * 1.2), Math.min(255, b * 1.2));
-    case 'falling':
-      return rgb2hex(r * 0.8, g * 0.8, b * 0.8);
-    default:
-      return baseColor;
-  }
-}
-
-// 트렌드 계산 함수
 function calculateTrend(currentValue, previousValue) {
   if (!previousValue) return 'stable';
 
@@ -85,7 +53,6 @@ function calculateTrend(currentValue, previousValue) {
   return 'stable';
 }
 
-// 랜덤 수 생성 함수 (트렌드 반영)
 function generateRandomEnrollment(baseCount, trend, variation = 0.2) {
   let trendMultiplier = 1;
   switch (trend) {
@@ -95,9 +62,6 @@ function generateRandomEnrollment(baseCount, trend, variation = 0.2) {
     case 'falling':
       trendMultiplier = 0.8;
       break;
-    case 'stable':
-    default:
-      trendMultiplier = 1;
   }
 
   const minCount = Math.max(0, baseCount * (1 - variation) * trendMultiplier);
@@ -105,7 +69,6 @@ function generateRandomEnrollment(baseCount, trend, variation = 0.2) {
   return Math.floor(Math.random() * (maxCount - minCount + 1)) + minCount;
 }
 
-// 파일 존재 확인 함수
 async function fileExists(path) {
   try {
     await access(path);
@@ -115,16 +78,14 @@ async function fileExists(path) {
   }
 }
 
-// 시간대별 트래픽 가중치 계산
 function getTimeBasedWeight(hour) {
-  if (hour < 6) return 0.3;  // 새벽
-  if (hour < 9) return 0.8;  // 아침
-  if (hour < 18) return 1.0; // 수업시간
-  if (hour < 22) return 0.9; // 저녁
-  return 0.4;                // 밤
+  if (hour < 6) return 0.3;
+  if (hour < 9) return 0.8;
+  if (hour < 18) return 1.0;
+  if (hour < 22) return 0.9;
+  return 0.4;
 }
 
-// 통계 수집 함수
 async function collectCoursePreferenceStatistics() {
   const now = new Date();
   const fileName = `statistics-admin-preference-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}.json`;
@@ -133,7 +94,6 @@ async function collectCoursePreferenceStatistics() {
     const saveFolder = process.env.SAVEFOLDER ?? 'jsons';
     const filePath = join(__dirname, '..', saveFolder, fileName);
 
-    // 이전 데이터 읽기
     let previousData = null;
     if (await fileExists(filePath)) {
       const existingContent = await readFile(filePath, 'utf8');
@@ -145,12 +105,10 @@ async function collectCoursePreferenceStatistics() {
 
     const timeWeight = getTimeBasedWeight(now.getHours());
 
-    // 도메인별 데이터 생성
     const domainPreferences = Object.entries(COURSE_PREFERENCES).map(([key, domain]) => {
       const domainCourses = domain.courses.map(course => {
         const currentValue = generateRandomEnrollment(course.baseCount, course.trend) * timeWeight;
 
-        // 이전 데이터에서 해당 과정의 수강생 수 찾기
         let previousValue = null;
         if (previousData) {
           const previousDomain = previousData.preferences.domains.find(d => d.domainId === key);
@@ -162,9 +120,9 @@ async function collectCoursePreferenceStatistics() {
           }
         }
 
-        // 트렌드 계산
         const trend = calculateTrend(currentValue, previousValue);
 
+        // color 정보 제외
         return {
           courseId: course.id,
           courseName: course.name,
@@ -173,6 +131,7 @@ async function collectCoursePreferenceStatistics() {
         };
       });
 
+      // domain color 정보 제외
       return {
         domainId: key,
         domainName: domain.name,
@@ -197,7 +156,6 @@ async function collectCoursePreferenceStatistics() {
       }
     };
 
-    // 파일 저장 로직
     let finalData;
     if (await fileExists(filePath)) {
       const existingContent = await readFile(filePath, 'utf8');
@@ -249,17 +207,12 @@ async function collectCoursePreferenceStatistics() {
   }
 }
 
-// 실행 스케줄링 설정
 function scheduleCollection() {
-  // 즉시 실행
   collectCoursePreferenceStatistics();
-
-  // 1시간 마다
   const FIFTEEN_SECONDS = 60 * 60 * 1000;
   setInterval(collectCoursePreferenceStatistics, FIFTEEN_SECONDS);
 }
 
-// 프로세스 시작
 scheduleCollection();
 
 export default collectCoursePreferenceStatistics;
