@@ -1,0 +1,112 @@
+/* Toast UI Editor 커스텀 스타일 */
+.toastui-editor-defaultUI {
+  border: none !important;
+}
+
+.toastui-editor-defaultUI-toolbar {
+  border-bottom: 1px solid #e5e7eb !important;
+  background-color: white !important;
+}
+
+.toastui-editor-md-container {
+  background-color: white !important;
+}
+
+.toastui-editor-main {
+  background-color: white !important;
+}
+
+.toastui-editor-toolbar-icons {
+  border: none !important;
+}
+
+.toastui-editor-toolbar-item-wrapper {
+  margin-right: 4px !important;
+}
+
+.toastui-editor-defaultUI button {
+  border-radius: 4px !important;
+}
+
+.toastui-editor-defaultUI button:hover {
+  background-color: #f3f4f6 !important;
+}
+
+/* Write/Preview 탭 숨기기 */
+.toastui-editor-mode-switch {
+  display: none !important;
+}
+
+/* 마크다운 에디터 영역 전체 너비 사용 */
+.toastui-editor-md-container .toastui-editor-md {
+  width: 100% !important;
+}
+
+/* 코드 블록 스타일 */
+.toastui-editor-contents pre {
+  background-color: #f3f4f6;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+}
+
+.toastui-editor-contents code {
+  background-color: #f3f4f6;
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.25rem;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+/* TinyMCE 스타일 */
+.tox-tinymce {
+  border: none !important;
+}
+
+.tox .tox-toolbar__primary {
+  background: none !important;
+  border-bottom: 1px solid #e5e7eb !important;
+}
+
+.tox .tox-edit-area__iframe {
+  background-color: white !important;
+}
+
+.tox .tox-tbtn {
+  color: #374151 !important;
+}
+
+.tox .tox-tbtn:hover {
+  background-color: #f3f4f6 !important;
+}
+
+.tox .tox-tbtn--enabled,
+.tox .tox-tbtn--enabled:hover {
+  background-color: #e5e7eb !important;
+  color: black !important;
+}
+
+/* Excalidraw 스타일 */
+.excalidraw {
+  --color-primary: black !important;
+  --color-primary-darker: #1a1a1a !important;
+  --color-primary-darkest: #333333 !important;
+  --color-primary-light: #4d4d4d !important;
+}
+
+.excalidraw .App-menu_top .buttonList {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem;
+}
+
+.excalidraw .App-menu_top {
+  border-bottom: 1px solid #e5e7eb !important;
+}
+
+.excalidraw .App-menu_bottom {
+  display: none !important;
+}
+
+.excalidraw .layer-ui__wrapper__top-right {
+  display: none !important;
+} 

@@ -1,0 +1,48 @@
+{
+  "name": "epari-board",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "server": "node server/index.mjs",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.716.0",
+    "@aws-sdk/client-s3": "^3.716.0",
+    "@aws-sdk/lib-dynamodb": "^3.716.0",
+    "@excalidraw/excalidraw": "^0.14.2",
+    "@tinymce/tinymce-react": "^5.1.1",
+    "@toast-ui/react-editor": "^3.2.3",
+    "carbon-now-cli": "^2.1.0",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "highlight.js": "^11.11.0",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "react-router-dom": "^5.3.4",
+    "uuid": "^11.0.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "@types/react": "^18.3.17",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "browserify-zlib": "^0.2.0",
+    "eslint": "^9.17.0",
+    "eslint-plugin-react": "^7.37.2",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "eslint-plugin-react-refresh": "^0.4.16",
+    "globals": "^15.13.0",
+    "postcss": "^8.4.49",
+    "process": "^0.11.10",
+    "stream-browserify": "^3.0.0",
+    "tailwindcss": "^3.4.17",
+    "util": "^0.12.5",
+    "vite": "^6.0.3"
+  }
+}
