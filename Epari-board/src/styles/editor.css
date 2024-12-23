@@ -4,7 +4,7 @@
 }
 
 .toastui-editor-defaultUI-toolbar {
-  border-bottom: 1px solid #e5e7eb !important;
+
   background-color: white !important;
 }
 
@@ -64,7 +64,6 @@
 
 .tox .tox-toolbar__primary {
   background: none !important;
-  border-bottom: 1px solid #e5e7eb !important;
 }
 
 .tox .tox-edit-area__iframe {
@@ -109,4 +108,20 @@
 
 .excalidraw .layer-ui__wrapper__top-right {
   display: none !important;
+}
+
+.editors-container {
+  position: relative;
+  /* border-top 스타일이 있다면 제거 */
+  border-top: none;
+}
+
+/* TinyMCE 에디터 컨테이너 스타일 */
+.tox-tinymce {
+  border: none !important;  /* TinyMCE의 기본 테두리 제거 */
+}
+
+/* Toast UI 에디터 컨테이너 스타일 */
+.toastui-editor-defaultUI {
+  border: none !important;  /* Toast UI의 기본 테두리 제거 */
 } 

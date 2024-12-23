@@ -13,4 +13,5 @@ body {
   min-width: 320px;
   min-height: 100vh;
   font-family: 'Inter', sans-serif;
+  padding: 0;
 }

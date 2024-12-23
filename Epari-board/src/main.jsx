@@ -1,10 +1,18 @@
 import React from 'react';
-import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import App from './App';
+import './index.css';
 
-ReactDOM.render(
-    <React.StrictMode>
-      <App />
-    </React.StrictMode>,
-    document.getElementById('root')
+// Toast UI Editor 에러 처리
+const originalError = console.error;
+console.error = (...args) => {
+  if (args[0]?.includes('ReactDOM.render is no longer supported')) {
+    return;
+  }
+  originalError.call(console, ...args);
+};
+
+const root = createRoot(document.getElementById('root'));
+root.render(
+  <App />
 );
