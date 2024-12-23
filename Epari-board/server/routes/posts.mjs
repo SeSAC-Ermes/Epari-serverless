@@ -279,7 +279,6 @@ router.get('/', async (req, res) => {
 
     console.log('Executing scan command...');
     const result = await docClient.send(command);
-    console.log('Scan result:', { count: result.Items?.length, items: result.Items?.map(item => ({ PK: item.PK, title: item.title })) });
 
     // 게시글 정렬 (최신순)
     const sortedPosts = result.Items
@@ -423,12 +422,14 @@ router.put('/:postId', async (req, res) => {
     const updatedPost = {
       ...post,
       ...updatedData,
-      SK: `METADATA#${timestamp}`,  // SK 형식 통일
       metadata: {
         ...post.metadata,
         updatedAt: timestamp
       }
     };
+
+    // 기존 SK 유지
+    updatedPost.SK = post.SK;
 
     await docClient.send(new PutCommand({
       TableName: "Epari-board-lhl",

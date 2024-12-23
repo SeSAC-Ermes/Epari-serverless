@@ -224,8 +224,23 @@ function WritePostPage() {
     }
   };
 
-  const removeTag = (indexToRemove) => {
+  const removeTag = (e, indexToRemove) => {
+    e.preventDefault();
     setTags(prev => prev.filter((_, index) => index !== indexToRemove));
+  };
+
+  const handleTagsChange = (newTags) => {
+    setPost(prev => ({
+      ...prev,
+      tags: newTags
+    }));
+  };
+
+  const handleTagDelete = (indexToDelete) => {
+    setPost(prev => ({
+      ...prev,
+      tags: prev.tags.filter((_, index) => index !== indexToDelete)
+    }));
   };
 
   return (
@@ -236,7 +251,7 @@ function WritePostPage() {
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-8">
-          {/* 카���고리 선택 */}
+          {/* 카테고리 선택 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
             <select 
@@ -298,7 +313,12 @@ function WritePostPage() {
                 >
                   #{tag}
                   <button 
-                    onClick={() => removeTag(index)}
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      removeTag(e, index);
+                    }}
                     className="ml-2 text-gray-500 hover:text-gray-700"
                   >
                     ×
