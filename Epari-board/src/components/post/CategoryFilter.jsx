@@ -1,33 +1,44 @@
-import { withRouter } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
-function CategoryFilter({ selectedCategory, onCategoryChange, history }) {
+function CategoryFilter({ selectedCategory, onCategoryChange }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const categories = [
-    { id: 'all', name: 'All' },
-    { id: 'backend', name: 'Backend' },
-    { id: 'frontend', name: 'Frontend' },
-    { id: 'ai', name: 'AI' },
-    { id: 'design', name: 'Design' },
-    { id: 'marketing', name: 'Marketing' }
+    { value: 'ALL', label: '전체' },
+    { value: 'MY', label: 'My 게시글' },
+    { value: 'BACKEND', label: '백엔드' },
+    { value: 'FRONTEND', label: '프론트엔드' },
+    { value: 'AI', label: 'AI' },
+    { value: 'DATA', label: 'DATA분석' },
+    { value: 'INFRA', label: '인프라' }
   ];
 
+  const handleCategoryChange = (category) => {
+    onCategoryChange(category);
+    navigate(`/?category=${category}`);
+  };
+
   return (
-    <div className="flex items-center mb-6">
-      {categories.map(category => (
-        <button
-          key={category.id}
-          onClick={() => onCategoryChange(category.id)}
-          className={`px-4 py-2 text-sm font-medium ${
-            category.id === selectedCategory
-              ? 'text-black border-b-2 border-black'
-              : 'text-gray-500 hover:text-black hover:border-b-2 hover:border-black transition-colors duration-200'
-          }`}
-        >
-          {category.name}
-        </button>
-      ))}
+    <div className="flex items-center justify-between w-full">
+      <div className="flex space-x-4">
+        {categories.map(category => (
+          <button
+            key={category.value}
+            onClick={() => handleCategoryChange(category.value)}
+            className={`px-4 py-2 text-sm font-medium ${
+              selectedCategory === category.value
+                ? 'text-black border-b-2 border-black'
+                : 'text-gray-500 hover:text-black hover:border-b-2 hover:border-black transition-colors duration-200'
+            }`}
+          >
+            {category.label}
+          </button>
+        ))}
+      </div>
       <button 
-        onClick={() => history.push('/write')}
-        className="ml-auto px-4 py-2 text-sm font-medium bg-black text-white rounded-full hover:bg-gray-800 transition-colors duration-200"
+        onClick={() => navigate('/write')}
+        className="px-4 py-2 text-sm font-medium bg-black text-white rounded-full hover:bg-gray-800 transition-colors duration-200"
       >
         + New Post
       </button>
@@ -35,4 +46,4 @@ function CategoryFilter({ selectedCategory, onCategoryChange, history }) {
   );
 }
 
-export default withRouter(CategoryFilter); 
+export default CategoryFilter; 

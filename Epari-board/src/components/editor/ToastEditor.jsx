@@ -1,34 +1,85 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import '@toast-ui/editor/dist/toastui-editor.css';
 import { Editor } from '@toast-ui/react-editor';
-import { Excalidraw } from "@excalidraw/excalidraw";
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { v4 as uuidv4 } from 'uuid';
+import { D3ChartPlugin } from '../chart/D3ChartPlugin';
 
-function ToastEditor({ content, onChange }) {
+function ToastEditor({ content, onChange, onImageUpload }) {
   const editorRef = useRef(null);
-  const [showDrawing, setShowDrawing] = useState(false);
-  const [drawingData, setDrawingData] = useState(null);
-  const toolbarInitialized = useRef(false);
 
   useEffect(() => {
-    if (editorRef.current && content) {
+    if (editorRef.current) {
       const editorInstance = editorRef.current.getInstance();
-      editorInstance.setMarkdown(content);
-    }
-  }, [content]);
+      editorInstance.setMarkdown(content || '');
 
-  useEffect(() => {
-    if (editorRef.current && !toolbarInitialized.current) {
-      toolbarInitialized.current = true;
-      const editorInstance = editorRef.current.getInstance();
-      editorInstance.insertToolbarItem({ groupIndex: 4, itemIndex: 0 }, {
-        name: 'drawing',
-        tooltip: 'Insert Drawing',
-        className: 'drawing',
-        text: 'Drawing',
-        onClick: () => setShowDrawing(true)
+      // 파이 차트 커맨드
+      editorInstance.addCommand('markdown', 'insertPieChart', () => {
+        const chartData = {
+          type: "pie",
+          data: [
+            { label: "Category A", value: 30 },
+            { label: "Category B", value: 20 },
+            { label: "Category C", value: 50 }
+          ]
+        };
+
+        // 차트를 HTML로 변환
+        const container = document.createElement('div');
+        const chartPlugin = new D3ChartPlugin();
+        chartPlugin.initChart(container, chartData.type, chartData.data);
+        
+        // HTML 삽입
+        editorInstance.insertText(container.outerHTML);
+      });
+
+      // 막대 차트 커맨드
+      editorInstance.addCommand('markdown', 'insertBarChart', () => {
+        const chartData = {
+          type: "bar",
+          data: [
+            { label: "A", value: 30 },
+            { label: "B", value: 45 },
+            { label: "C", value: 25 }
+          ]
+        };
+
+        const container = document.createElement('div');
+        const chartPlugin = new D3ChartPlugin();
+        chartPlugin.initChart(container, chartData.type, chartData.data);
+        
+        editorInstance.insertText(container.outerHTML);
+      });
+
+      // 라인 차트 커맨드
+      editorInstance.addCommand('markdown', 'insertLineChart', () => {
+        const chartData = {
+          type: "line",
+          data: [
+            { label: "Jan", value: 10 },
+            { label: "Feb", value: 20 },
+            { label: "Mar", value: 15 },
+            { label: "Apr", value: 25 }
+          ]
+        };
+
+        const container = document.createElement('div');
+        const chartPlugin = new D3ChartPlugin();
+        chartPlugin.initChart(container, chartData.type, chartData.data);
+        
+        editorInstance.insertText(container.outerHTML);
+      });
+
+      // 차트 렌더링을 위한 커스텀 코드블록 설정
+      editorInstance.addHook('addImageBlobHook', handleImageUpload);
+      
+      // 마크다운 변경 감지
+      editorInstance.addHook('change', () => {
+        const markdown = editorInstance.getMarkdown();
+        onChange(markdown);
       });
     }
-  }, []);
+  }, [content]);
 
   const handleChange = () => {
     if (editorRef.current) {
@@ -38,106 +89,81 @@ function ToastEditor({ content, onChange }) {
     }
   };
 
-  const handleDrawingChange = (elements, state) => {
-    const data = {
-      elements,
-      appState: {
-        ...state,
-        collaborators: null,
-        currentItemFontFamily: 0,
-        selectedElementIds: {},
-        width: undefined,
-        height: undefined
-      }
-    };
-    setDrawingData(data);
-  };
+  const handleImageUpload = async (file, callback) => {
+    try {
+      const s3Client = new S3Client({
+        region: import.meta.env.VITE_AWS_REGION,
+        credentials: {
+          accessKeyId: import.meta.env.VITE_AWS_ACCESS_KEY_ID,
+          secretAccessKey: import.meta.env.VITE_AWS_SECRET_ACCESS_KEY,
+        }
+      });
 
-  const handleDrawingSave = () => {
-    if (drawingData && editorRef.current) {
-      const editorInstance = editorRef.current.getInstance();
-      const drawingContent = `\n\`\`\`excalidraw\n${JSON.stringify(drawingData)}\n\`\`\`\n`;
-      editorInstance.insertText(drawingContent);
-      setShowDrawing(false);
-      setDrawingData(null);
+      const fileName = `images/${uuidv4()}-${file.name}`;
+      await s3Client.send(new PutObjectCommand({
+        Bucket: import.meta.env.VITE_AWS_BUCKET_NAME,
+        Key: fileName,
+        Body: file,
+        ContentType: file.type
+      }));
+
+      const imageUrl = `https://${import.meta.env.VITE_AWS_BUCKET_NAME}.s3.${import.meta.env.VITE_AWS_REGION}.amazonaws.com/${fileName}`;
+      
+      onImageUpload(imageUrl);
+      
+      callback(imageUrl);
+    } catch (error) {
+      console.error('Failed to upload image:', error);
+      callback('');
     }
   };
 
   return (
-    <>
-      <div className="min-h-[400px]">
-        <Editor
-          ref={editorRef}
-          initialValue={content || ''}
-          previewStyle="vertical"
-          height="400px"
-          initialEditType="markdown"
-          useCommandShortcut={true}
-          onChange={handleChange}
-          toolbarItems={[
-            ['heading', 'bold', 'italic', 'strike'],
-            ['hr', 'quote'],
-            ['ul', 'ol', 'task', 'indent', 'outdent'],
-            ['table', 'image', 'link'],
-            ['code', 'codeblock']
-          ]}
-        />
-      </div>
-
-      {showDrawing && (
-        <div 
-          className="fixed inset-0 z-[9999] overflow-y-auto"
-          aria-labelledby="modal-title" 
-          role="dialog" 
-          aria-modal="true"
-        >
-          <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={() => setShowDrawing(false)} />
-
-            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-[900px] sm:w-full">
-              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-medium text-gray-900">Drawing</h3>
-                  <div className="space-x-2">
-                    <button 
-                      onClick={handleDrawingSave}
-                      className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
-                    >
-                      Save
-                    </button>
-                    <button 
-                      onClick={() => setShowDrawing(false)}
-                      className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-                <div style={{ height: "500px", width: "100%" }}>
-                  <Excalidraw
-                    onChange={handleDrawingChange}
-                    theme="light"
-                    gridModeEnabled={false}
-                    zenModeEnabled={false}
-                    viewModeEnabled={false}
-                    UIOptions={{
-                      canvasActions: {
-                        loadScene: false,
-                        saveAsImage: false,
-                        saveToActiveFile: false,
-                        export: false,
-                        toggleTheme: false,
-                        clearCanvas: true
-                      }
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
+    <div className="min-h-[400px]">
+      <Editor
+        ref={editorRef}
+        initialValue=""
+        previewStyle="vertical"
+        height="400px"
+        initialEditType="markdown"
+        useCommandShortcut={true}
+        onChange={handleChange}
+        hideModeSwitch={true}
+        toolbarItems={[
+          ['heading', 'bold', 'italic', 'strike'],
+          ['hr', 'quote'],
+          ['ul', 'ol', 'task', 'indent', 'outdent'],
+          ['table', 'image', 'link'],
+          ['code', 'codeblock'],
+          [
+            {
+              name: 'piechart',
+              className: 'toastui-editor-custom-button',
+              tooltip: 'Insert Pie Chart',
+              text: 'Pie Chart',
+              command: 'insertPieChart'
+            },
+            {
+              name: 'barchart',
+              className: 'toastui-editor-custom-button',
+              tooltip: 'Insert Bar Chart',
+              text: 'Bar Chart',
+              command: 'insertBarChart'
+            },
+            {
+              name: 'linechart',
+              className: 'toastui-editor-custom-button',
+              tooltip: 'Insert Line Chart',
+              text: 'Line Chart',
+              command: 'insertLineChart'
+            }
+          ]
+        ]}
+        hooks={{
+          addImageBlobHook: handleImageUpload
+        }}
+      />
+    </div>
   );
 }
 

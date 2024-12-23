@@ -8,11 +8,19 @@ export default {
     extend: {
       maxWidth: {
         '8xl': '90rem',
+        '9xl': '96rem',
+        'custom': '98%',
       },
       fontFamily: {
         'inter': ['Inter', 'sans-serif'],
       },
     },
   },
-  plugins: [],
-} 
+  plugins: [
+    require('@tailwindcss/typography'),
+    require('@tailwindcss/forms'),
+  ],
+  corePlugins: {
+    container: false,
+  }
+}
