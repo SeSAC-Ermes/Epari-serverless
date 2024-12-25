@@ -1,4 +1,5 @@
 import Navbar from './Navbar';
+import { Outlet } from 'react-router-dom'
 import Sidebar from './Sidebar';
 import defaultAvatar from '../../assets/default-avatar.png';
 
@@ -36,6 +37,7 @@ function Layout({ children }) {
           </div>
           <div className="flex-1">
             {children}
+            <Outlet />
           </div>
         </div>
       </div>

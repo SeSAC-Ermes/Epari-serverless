@@ -8,7 +8,7 @@ provider:
   stage: ${opt:stage, 'dev'}
   region: ${opt:region, 'ap-northeast-2'}
   environment:
-    POSTS_TABLE: ${self:service}-${self:provider.stage}-posts
+    POSTS_TABLE: Epari-board-lhl
     STAGE: ${self:provider.stage}
   iam:
     role:
