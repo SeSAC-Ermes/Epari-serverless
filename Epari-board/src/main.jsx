@@ -1,5 +1,5 @@
 import React from 'react';
-import { createRoot } from 'react-dom/client';
+import { render } from 'react-dom';
 import App from './App';
 import './index.css';
 
@@ -12,7 +12,9 @@ console.error = (...args) => {
   originalError.call(console, ...args);
 };
 
-const root = createRoot(document.getElementById('root'));
-root.render(
-  <App />
+render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>,
+    document.getElementById('root')
 );
