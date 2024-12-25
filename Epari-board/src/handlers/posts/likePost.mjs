@@ -1,13 +1,13 @@
-
-import { QueryCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
-import { dynamoDB } from "../../lib/dynamodb.js";
+import { PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
+import { dynamodb } from "../../lib/dynamodb.mjs";
 
 export const handler = async (event) => {
   try {
     const postId = event.pathParameters.postId;
     const normalizedPostId = String(parseInt(postId)).padStart(5, '0');
+    const userId = "user123"; // TODO: 실제 인증된 사용자 ID로 대체
 
-    const command = new QueryCommand({
+    const getCommand = new QueryCommand({
       TableName: process.env.POSTS_TABLE,
       KeyConditionExpression: "PK = :pk",
       ExpressionAttributeValues: {
@@ -15,7 +15,7 @@ export const handler = async (event) => {
       }
     });
 
-    const { Items } = await dynamoDB.send(command);
+    const { Items } = await dynamodb.send(getCommand);
 
     if (!Items || Items.length === 0) {
       return {
@@ -29,18 +29,20 @@ export const handler = async (event) => {
     }
 
     const post = Items[0];
+    const likedUsers = post.likedUsers || [];
+    const hasLiked = likedUsers.includes(userId);
 
-    // 조회수 증가
-    await dynamoDB.send(new UpdateCommand({
+    if (hasLiked) {
+      post.likedUsers = likedUsers.filter(id => id !== userId);
+      post.metadata.likes = Math.max((post.metadata.likes || 0) - 1, 0);
+    } else {
+      post.likedUsers = [...likedUsers, userId];
+      post.metadata.likes = (post.metadata.likes || 0) + 1;
+    }
+
+    await dynamodb.send(new PutCommand({
       TableName: process.env.POSTS_TABLE,
-      Key: {
-        PK: post.PK,
-        SK: post.SK
-      },
-      UpdateExpression: "SET metadata.views = metadata.views + :inc",
-      ExpressionAttributeValues: {
-        ":inc": 1
-      }
+      Item: post
     }));
 
     return {
@@ -49,17 +51,20 @@ export const handler = async (event) => {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*'
       },
-      body: JSON.stringify(post)
+      body: JSON.stringify({
+        likes: post.metadata.likes,
+        hasLiked: !hasLiked
+      })
     };
   } catch (error) {
-    console.error('Error in getPost:', error);
+    console.error('Error in likePost:', error);
     return {
       statusCode: 500,
       headers: {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*'
       },
-      body: JSON.stringify({ error: 'Failed to fetch post' })
+      body: JSON.stringify({ error: 'Failed to like post' })
     };
   }
 };

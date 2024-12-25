@@ -1,5 +1,5 @@
 import { QueryCommand } from "@aws-sdk/lib-dynamodb";
-import { dynamoDB } from "../../lib/dynamodb.js";
+import { dynamodb } from "../../lib/dynamodb.mjs";
 
 export const handler = async (event) => {
   const { postId } = event.pathParameters;
@@ -19,7 +19,7 @@ export const handler = async (event) => {
       ConsistentRead: false // 최신 데이터가 필수가 아닌 경우 eventually consistent read 사용
     });
 
-    const { Items } = await dynamoDB.send(command);
+    const { Items } = await dynamodb.send(command);
 
     if (!Items || Items.length === 0) {
       return {

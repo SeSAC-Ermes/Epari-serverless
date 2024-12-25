@@ -2,7 +2,6 @@ import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 
-// https://vitejs.dev/config/
 export default defineConfig(({ command, mode }) => {
   // 환경 변수 로드
   const env = loadEnv(mode, process.cwd(), '');
@@ -48,7 +47,8 @@ export default defineConfig(({ command, mode }) => {
     server: {
       proxy: {
         '/api': {
-          target: env.VITE_API_URL || 'http://localhost:3000',
+          //target: env.VITE_API_URL || 'http://localhost:3000',  // 로컬에서 테스트 할 때
+          target: 'https://6jrhaz0i4e.execute-api.ap-northeast-2.amazonaws.com', // 배포 환경
           changeOrigin: true,
           secure: false,
           rewrite: (path) => path.replace(/^\/api/, ''),

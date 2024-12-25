@@ -1,8 +1,9 @@
 import { PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
-import { dynamoDB } from "../../lib/dynamodb.js";
+import { dynamodb } from "../../lib/dynamodb.mjs";
 
 export const handler = async (event) => {
   const { postId, commentId } = event.pathParameters;
+  const { content } = JSON.parse(event.body);
   const userId = "user123"; // TODO: Cognito 또는 JWT에서 사용자 ID 추출
 
   try {
@@ -16,7 +17,7 @@ export const handler = async (event) => {
       }
     });
 
-    const { Items } = await dynamoDB.send(getCommand);
+    const { Items } = await dynamodb.send(getCommand);
 
     if (!Items || Items.length === 0) {
       return {
@@ -43,7 +44,7 @@ export const handler = async (event) => {
       };
     }
 
-    // 권한 검증 로직
+    // 권한 검증
     if (post.comments[commentIndex].author.id !== userId) {
       return {
         statusCode: 403,
@@ -51,15 +52,14 @@ export const handler = async (event) => {
           'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': '*'
         },
-        body: JSON.stringify({ error: 'Not authorized to delete this comment' })
+        body: JSON.stringify({ error: 'Not authorized to update this comment' })
       };
     }
 
-    // 댓글 삭제 및 메타데이터 업데이트
-    post.comments = post.comments.filter(c => c.id !== commentId);
-    post.metadata = {
-      ...post.metadata,
-      commentsCount: post.comments.length,
+    // 댓글 업데이트
+    post.comments[commentIndex] = {
+      ...post.comments[commentIndex],
+      content,
       updatedAt: new Date().toISOString()
     };
 
@@ -67,10 +67,11 @@ export const handler = async (event) => {
     const updateCommand = new PutCommand({
       TableName: process.env.POSTS_TABLE,
       Item: post,
-      ConditionExpression: "attribute_exists(PK) AND attribute_exists(SK)"
+      ConditionExpression: "attribute_exists(PK) AND attribute_exists(SK)",
+      ReturnValues: "ALL_OLD"
     });
 
-    await dynamoDB.send(updateCommand);
+    await dynamodb.send(updateCommand);
 
     return {
       statusCode: 200,
@@ -79,14 +80,11 @@ export const handler = async (event) => {
         'Access-Control-Allow-Origin': '*',
         'Cache-Control': 'no-cache' // 캐시 무효화
       },
-      body: JSON.stringify({
-        message: 'Comment deleted successfully',
-        newCommentsCount: post.metadata.commentsCount
-      })
+      body: JSON.stringify(post.comments[commentIndex])
     };
 
   } catch (error) {
-    console.error('Error in deleteComment:', {
+    console.error('Error in updateComment:', {
       error,
       postId,
       commentId,
@@ -111,7 +109,7 @@ export const handler = async (event) => {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*'
       },
-      body: JSON.stringify({ error: 'Failed to delete comment' })
+      body: JSON.stringify({ error: 'Failed to update comment' })
     };
   }
 };
