@@ -1,5 +1,5 @@
 import { PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
-import { dynamoDB } from "../../lib/dynamodb.js";
+import { dynamodb } from "../../lib/dynamodb.mjs";
 
 export const handler = async (event) => {
   try {
@@ -15,7 +15,7 @@ export const handler = async (event) => {
       }
     });
 
-    const { Items } = await dynamoDB.send(getCommand);
+    const { Items } = await dynamodb.send(getCommand);
 
     if (!Items || Items.length === 0) {
       return {
@@ -40,7 +40,7 @@ export const handler = async (event) => {
       }
     };
 
-    await dynamoDB.send(new PutCommand({
+    await dynamodb.send(new PutCommand({
       TableName: process.env.POSTS_TABLE,
       Item: updatedPost
     }));

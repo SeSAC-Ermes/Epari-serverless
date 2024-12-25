@@ -3,7 +3,7 @@ import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 
 const client = new DynamoDBClient({});
 
-export const dynamoDB = DynamoDBDocumentClient.from(client, {
+export const dynamodb = DynamoDBDocumentClient.from(client, {
   marshallOptions: {
     convertEmptyValues: true,
     removeUndefinedValues: true,

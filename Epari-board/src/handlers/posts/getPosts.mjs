@@ -1,5 +1,5 @@
 import { ScanCommand } from "@aws-sdk/lib-dynamodb";
-import { dynamoDB } from "../../lib/dynamodb.js";
+import { dynamodb } from "../../lib/dynamodb.mjs";
 
 export const handler = async (event) => {
   try {
@@ -11,7 +11,7 @@ export const handler = async (event) => {
       }
     });
 
-    const { Items } = await dynamoDB.send(command);
+    const { Items } = await dynamodb.send(command);
 
     const posts = Items
         .map(post => ({

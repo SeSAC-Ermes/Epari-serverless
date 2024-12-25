@@ -1,7 +1,7 @@
 import { DeleteCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
-import { dynamoDB } from "../../lib/dynamodb.js";
-import { s3 } from "../../lib/s3.js";
+import { dynamodb } from "../../lib/dynamodb.mjs";
+import { s3 } from "../../lib/s3.mjs";
 
 export const handler = async (event) => {
   try {
@@ -16,7 +16,7 @@ export const handler = async (event) => {
       }
     });
 
-    const { Items } = await dynamoDB.send(getCommand);
+    const { Items } = await dynamodb.send(getCommand);
 
     if (!Items || Items.length === 0) {
       return {
@@ -47,7 +47,7 @@ export const handler = async (event) => {
       }
     }
 
-    await dynamoDB.send(new DeleteCommand({
+    await dynamodb.send(new DeleteCommand({
       TableName: process.env.POSTS_TABLE,
       Key: {
         PK: post.PK,

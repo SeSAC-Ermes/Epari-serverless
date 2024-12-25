@@ -1,6 +1,6 @@
 import { PutCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
 import { v4 as uuidv4 } from 'uuid';
-import { dynamoDB } from "../../lib/dynamodb.js";
+import { dynamodb } from "../../lib/dynamodb.mjs";
 
 export const handler = async (event) => {
   try {
@@ -16,7 +16,7 @@ export const handler = async (event) => {
       }
     });
 
-    const { Items } = await dynamoDB.send(scanCommand);
+    const { Items } = await dynamodb.send(scanCommand);
 
     // 다음 게시글 번호 계산
     const nextPostNumber = Items && Items.length > 0
@@ -49,7 +49,7 @@ export const handler = async (event) => {
       likedUsers: []
     };
 
-    await dynamoDB.send(new PutCommand({
+    await dynamodb.send(new PutCommand({
       TableName: process.env.POSTS_TABLE,
       Item: postData
     }));

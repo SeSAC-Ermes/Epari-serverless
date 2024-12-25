@@ -32,3 +32,5 @@ dist-ssr
 serverless.yml
 
 esbuild/build/
+.esbuild/
+.serverless/

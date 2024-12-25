@@ -1,6 +1,6 @@
 import { PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { v4 as uuidv4 } from 'uuid';
-import { dynamoDB } from "../../lib/dynamodb.js";
+import { dynamodb } from "../../lib/dynamodb.mjs";
 
 export const handler = async (event) => {
   try {
@@ -19,7 +19,7 @@ export const handler = async (event) => {
       }
     });
 
-    const { Items } = await dynamoDB.send(getCommand);
+    const { Items } = await dynamodb.send(getCommand);
 
     if (!Items || Items.length === 0) {
       return {
@@ -62,7 +62,7 @@ export const handler = async (event) => {
     };
 
     // DynamoDB 업데이트
-    await dynamoDB.send(new PutCommand({
+    await dynamodb.send(new PutCommand({
       TableName: process.env.POSTS_TABLE,
       Item: updatedPost,
       // 낙관적 락킹을 위한 조건 추가
