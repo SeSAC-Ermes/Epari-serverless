@@ -5,14 +5,12 @@ import { s3 } from "../../lib/s3.mjs";
 
 export const handler = async (event) => {
   try {
-    const postId = event.pathParameters.postId;
-    const normalizedPostId = String(parseInt(postId)).padStart(5, '0');
-
-    const getCommand = new QueryCommand({
+    const { postId } = event.pathParameters;
+    const command = new DeleteCommand({
       TableName: process.env.POSTS_TABLE,
-      KeyConditionExpression: "PK = :pk",
-      ExpressionAttributeValues: {
-        ":pk": `POST#${normalizedPostId}`
+      Key: {
+        PK: `POST#${postId}`,
+        SK: 'METADATA'
       }
     });
 
@@ -47,13 +45,7 @@ export const handler = async (event) => {
       }
     }
 
-    await dynamodb.send(new DeleteCommand({
-      TableName: process.env.POSTS_TABLE,
-      Key: {
-        PK: post.PK,
-        SK: post.SK
-      }
-    }));
+    await dynamodb.send(command);
 
     return {
       statusCode: 200,

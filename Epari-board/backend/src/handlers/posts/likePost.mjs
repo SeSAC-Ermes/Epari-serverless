@@ -1,21 +1,21 @@
-import { PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
+import { PutCommand, QueryCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { dynamodb } from "../../lib/dynamodb.mjs";
 
 export const handler = async (event) => {
   try {
-    const postId = event.pathParameters.postId;
-    const normalizedPostId = String(parseInt(postId)).padStart(5, '0');
-    const userId = "user123"; // TODO: 실제 인증된 사용자 ID로 대체
+    const { postId } = event.pathParameters;
+    const { userId } = JSON.parse(event.body);
 
-    const getCommand = new QueryCommand({
+    const command = new UpdateCommand({
       TableName: process.env.POSTS_TABLE,
-      KeyConditionExpression: "PK = :pk",
-      ExpressionAttributeValues: {
-        ":pk": `POST#${normalizedPostId}`
-      }
+      Key: {
+        PK: `POST#${postId}`,
+        SK: 'METADATA'
+      },
+      // ... rest of the code
     });
 
-    const { Items } = await dynamodb.send(getCommand);
+    const { Items } = await dynamodb.send(command);
 
     if (!Items || Items.length === 0) {
       return {

@@ -1,21 +1,21 @@
-import { PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
+import { GetCommand, UpdateCommand, ScanCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { dynamodb } from "../../lib/dynamodb.mjs";
 
 export const handler = async (event) => {
   try {
-    const postId = event.pathParameters.postId;
-    const normalizedPostId = String(parseInt(postId)).padStart(5, '0');
-    const updatedData = JSON.parse(event.body);
-
-    const getCommand = new QueryCommand({
+    const { postId } = event.pathParameters;
+    console.log('Fetching post with ID:', postId);
+    
+    const command = new QueryCommand({
       TableName: process.env.POSTS_TABLE,
       KeyConditionExpression: "PK = :pk",
       ExpressionAttributeValues: {
-        ":pk": `POST#${normalizedPostId}`
+        ":pk": `POST#${postId}`
       }
     });
 
-    const { Items } = await dynamodb.send(getCommand);
+    const { Items } = await dynamodb.send(command);
+    console.log('DynamoDB response:', Items);
 
     if (!Items || Items.length === 0) {
       return {
@@ -28,21 +28,21 @@ export const handler = async (event) => {
       };
     }
 
-    const post = Items[0];
-    const timestamp = new Date().toISOString();
+    const Item = Items[0];
 
-    const updatedPost = {
-      ...post,
-      ...updatedData,
-      metadata: {
-        ...post.metadata,
-        updatedAt: timestamp
-      }
-    };
-
-    await dynamodb.send(new PutCommand({
+    await dynamodb.send(new UpdateCommand({
       TableName: process.env.POSTS_TABLE,
-      Item: updatedPost
+      Key: {
+        PK: Item.PK,
+        SK: Item.SK
+      },
+      UpdateExpression: "SET metadata.#views = metadata.#views + :inc",
+      ExpressionAttributeNames: {
+        "#views": "views"
+      },
+      ExpressionAttributeValues: {
+        ":inc": 1
+      }
     }));
 
     return {
@@ -51,17 +51,17 @@ export const handler = async (event) => {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*'
       },
-      body: JSON.stringify(updatedPost)
+      body: JSON.stringify(Item)
     };
   } catch (error) {
-    console.error('Error in updatePost:', error);
+    console.error('Error in getPost:', error);
     return {
       statusCode: 500,
       headers: {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*'
       },
-      body: JSON.stringify({ error: 'Failed to update post' })
+      body: JSON.stringify({ error: 'Failed to fetch post' })
     };
   }
 };

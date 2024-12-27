@@ -47,8 +47,8 @@ export default defineConfig(({ command, mode }) => {
     server: {
       proxy: {
         '/api': {
-          //target: env.VITE_API_URL || 'http://localhost:3000',  // 로컬에서 테스트 할 때
-          target: 'https://6jrhaz0i4e.execute-api.ap-northeast-2.amazonaws.com', // 배포 환경
+          target: env.VITE_API_URL || 'http://localhost:3000',  // 로컬에서 테스트 할 때
+          //target: 'https://yo2zg93gt7.execute-api.ap-northeast-2.amazonaws.com', // 배포 환경
           changeOrigin: true,
           secure: false,
           rewrite: (path) => path.replace(/^\/api/, ''),

@@ -27,11 +27,9 @@ function PostDetailPage() {
     const fetchPost = async () => {
       try {
         setLoading(true);
-        // postId를 5자리 숫자로 패딩
-        const paddedPostId = String(postId).padStart(5, '0');
-        console.log('Fetching post with ID:', paddedPostId);
+        console.log('Fetching post with ID:', postId);
         
-        const response = await fetch(`/api/posts/${paddedPostId}`);
+        const response = await fetch(`/api/posts/${postId}`);
         console.log('Response status:', response.status);
         
         if (!response.ok) {
@@ -56,9 +54,7 @@ function PostDetailPage() {
 
   const handleLike = async () => {
     try {
-      // postId를 5자리 숫자로 패딩
-      const paddedPostId = String(postId).padStart(5, '0');
-      const response = await fetch(`/api/posts/${paddedPostId}/like`, {
+      const response = await fetch(`/api/posts/${postId}/like`, {
         method: 'POST'
       });
       if (!response.ok) throw new Error('Failed to like post');
@@ -87,7 +83,14 @@ function PostDetailPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ content: comment })
+        body: JSON.stringify({
+          content: comment,
+          author: {
+            id: 'user123',
+            name: 'John Doe',
+            avatar: '/src/assets/default-avatar.png'
+          }
+        })
       });
       
       if (!response.ok) throw new Error('Failed to add comment');
@@ -99,7 +102,7 @@ function PostDetailPage() {
         comments: [newComment, ...(prev.comments || [])],
         metadata: {
           ...prev.metadata,
-          commentsCount: (prev.comments?.length || 0) + 1
+          commentsCount: (prev.metadata?.commentsCount || 0) + 1
         }
       }));
       
@@ -155,22 +158,19 @@ function PostDetailPage() {
   };
 
   const handleEdit = () => {
-    const paddedPostId = String(postId).padStart(5, '0');
-    navigate(`/write?edit=${paddedPostId}`);
+    navigate(`/write?edit=${postId}`);
   };
 
   const handleDelete = async () => {
     if (!window.confirm('정말 삭제하시겠습니까?')) return;
 
     try {
-      const paddedPostId = String(postId).padStart(5, '0');
-      const response = await fetch(`/api/posts/${paddedPostId}`, {
+      const response = await fetch(`/api/posts/${postId}`, {
         method: 'DELETE'
       });
 
       if (!response.ok) throw new Error('Failed to delete post');
-
-      navigate('/');  // 홈으로 이동
+      navigate('/');
     } catch (error) {
       console.error('Error deleting post:', error);
     }

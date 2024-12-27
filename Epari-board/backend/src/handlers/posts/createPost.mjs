@@ -1,36 +1,21 @@
-import { PutCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient, PutCommand } from '@aws-sdk/lib-dynamodb';
 import { v4 as uuidv4 } from 'uuid';
-import { dynamodb } from "../../lib/dynamodb.mjs";
+
+const client = new DynamoDBClient({});
+const docClient = DynamoDBDocumentClient.from(client);
 
 export const handler = async (event) => {
   try {
     const post = JSON.parse(event.body);
+    const postId = uuidv4();
     const timestamp = new Date().toISOString();
 
-    // 마지막 POST 번호 조회
-    const scanCommand = new ScanCommand({
-      TableName: process.env.POSTS_TABLE,
-      FilterExpression: "begins_with(PK, :pk)",
-      ExpressionAttributeValues: {
-        ":pk": "POST#"
-      }
-    });
-
-    const { Items } = await dynamodb.send(scanCommand);
-
-    // 다음 게시글 번호 계산
-    const nextPostNumber = Items && Items.length > 0
-        ? Math.max(...Items.map(item => {
-      const match = item.PK.match(/POST#(\d+)/);
-      return match ? parseInt(match[1]) : 0;
-    })) + 1
-        : 1;
-
     const postData = {
-      PK: `POST#${nextPostNumber.toString().padStart(5, '0')}`,
+      PK: `POST#${postId}`,
       SK: `METADATA#${timestamp}`,
       GSI1PK: `USER#${post.author.id}`,
-      GSI1SK: `POST#${nextPostNumber.toString().padStart(5, '0')}`,
+      GSI1SK: `POST#${postId}`,
       id: uuidv4(),
       title: post.title,
       content: post.content,
@@ -49,7 +34,13 @@ export const handler = async (event) => {
       likedUsers: []
     };
 
-    await dynamodb.send(new PutCommand({
+    console.log('Saving post:', {
+      PK: `POST#${postId}`,
+      SK: 'METADATA',
+      // ... 다른 필드들
+    });
+
+    await docClient.send(new PutCommand({
       TableName: process.env.POSTS_TABLE,
       Item: postData
     }));
@@ -63,14 +54,14 @@ export const handler = async (event) => {
       body: JSON.stringify(postData)
     };
   } catch (error) {
-    console.error('Error in createPost:', error);
+    console.error('Error creating post:', error);
     return {
       statusCode: 500,
       headers: {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*'
       },
-      body: JSON.stringify({ error: 'Failed to create post' })
+      body: JSON.stringify({ error: 'Could not create post' })
     };
   }
 };

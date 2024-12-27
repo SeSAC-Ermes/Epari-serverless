@@ -15,16 +15,27 @@ function HomePage() {
 
     const fetchPosts = async () => {
       try {
-        console.log('Fetching posts...'); // 디버깅용 로그 추가
+        setLoading(true);
+        console.log('Fetching posts...'); 
         const response = await fetch('/api/posts');
-        console.log('Response:', response); // 디버깅용 로그 추가
+        console.log('Response:', response); 
 
         if (!response.ok) {
-          throw new Error('Failed to fetch posts');
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
+        
         const data = await response.json();
-        console.log('Fetched data:', data); // 디버깅용 로그 추가
-        setPosts(data);
+        console.log('Fetched data:', data);
+
+        // 중복 제거를 위한 Set 사용
+        const seen = new Set();
+        const uniquePosts = data.filter(post => {
+          const duplicate = seen.has(post.PK);
+          seen.add(post.PK);
+          return !duplicate;
+        });
+
+        setPosts(uniquePosts);
       } catch (error) {
         console.error('Error fetching posts:', error);
         setError(error.message);
@@ -69,19 +80,19 @@ function HomePage() {
           />
           <div className="space-y-6">
             {posts.map(post => (
-                <PostCard key={post.PK} post={{
+                <PostCard key={`${post.PK}-${post.metadata.createdAt}`} post={{
                   id: post.PK,
                   title: post.title,
                   excerpt: post.content,
                   author: post.author,
                   createdAt: new Date(post.metadata.createdAt).toLocaleDateString(),
-                  tags: post.tags,
+                  tags: post.tags || [],
                   metadata: {
                     views: post.metadata?.views || 0,
                     likes: post.metadata?.likes || 0,
                     commentsCount: post.metadata?.commentsCount || 0
                   }
-                }}/>
+                }} to={`/posts/${post.PK.split('#')[1]}`}/>
             ))}
           </div>
         </main>

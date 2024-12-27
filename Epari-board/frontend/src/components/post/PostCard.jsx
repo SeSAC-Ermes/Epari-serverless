@@ -7,7 +7,8 @@ function PostCard({ post }) {
   const navigate = useNavigate();
 
   const handleEdit = () => {
-    navigate(`/write?edit=${post.id.split('#')[1]}`);
+    const postId = post.id.split('#')[1];
+    navigate(`/write?edit=${postId}`);
     setShowMenu(false);
   };
 
@@ -43,7 +44,7 @@ function PostCard({ post }) {
   };
 
   // PK에서 숫자만 추출 (POST#00001 -> 1)
-  const postNumber = post.id.split('#')[1].replace(/^0+/, '');
+  const postId = post.id.split('#')[1];
 
   return (
     <div className="bg-white shadow-sm hover:shadow-md transition-shadow duration-200 rounded-xl divide-y divide-gray-100">
@@ -85,12 +86,12 @@ function PostCard({ post }) {
             )}
           </div>
         </div>
-        <Link to={`/posts/${postNumber}`}>
+        <Link to={`/posts/${post.id.split('#')[1]}`}>
           <h2 className="mt-4 text-xl font-semibold hover:text-blue-600">{post.title}</h2>
         </Link>
         <p className="mt-2 text-gray-600">{createExcerpt(post.excerpt)}</p>
         <div className="mt-4 flex flex-wrap gap-2">
-          {post.tags.map(tag => (
+          {(post.tags || []).map(tag => (
             <span 
               key={tag}
               className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-black bg-opacity-5 text-gray-900 hover:bg-opacity-10 transition-colors duration-200"

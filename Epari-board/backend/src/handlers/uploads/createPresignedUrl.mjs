@@ -1,6 +1,7 @@
 import { S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { v4 as uuidv4 } from 'uuid';
 
 const s3Client = new S3Client({
   region: process.env.AWS_REGION
@@ -8,12 +9,14 @@ const s3Client = new S3Client({
 
 export const handler = async (event) => {
   try {
+    const { fileType } = JSON.parse(event.body);
+    const fileId = uuidv4();
+    const key = `uploads/${fileId}${fileType}`;
     const { contentType } = JSON.parse(event.body);
-    const fileName = `uploads/${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
 
     const command = new PutObjectCommand({
       Bucket: process.env.BUCKET_NAME,
-      Key: fileName,
+      Key: key,
       ContentType: contentType
     });
 
@@ -29,7 +32,7 @@ export const handler = async (event) => {
       },
       body: JSON.stringify({
         uploadUrl: signedUrl,
-        key: fileName
+        key: key
       })
     };
   } catch (error) {
