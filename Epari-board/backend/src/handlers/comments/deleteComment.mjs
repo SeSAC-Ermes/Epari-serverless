@@ -5,13 +5,11 @@ export const handler = async (event) => {
   const userId = "user123"; // TODO: Cognito 또는 JWT에서 사용자 ID 추출
 
   try {
-    const normalizedPostId = String(parseInt(postId)).padStart(5, '0');
-
     const getCommand = new QueryCommand({
       TableName: process.env.POSTS_TABLE,
       KeyConditionExpression: "PK = :pk",
       ExpressionAttributeValues: {
-        ":pk": `POST#${normalizedPostId}`
+        ":pk": `POST#${postId}` // UUID는 정규화가 필요 없음
       }
     });
 

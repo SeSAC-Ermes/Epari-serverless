@@ -1,4 +1,4 @@
-import { PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
+import { QueryCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { dynamodb } from "../../lib/dynamodb.mjs";
 
 export const handler = async (event) => {
@@ -7,17 +7,16 @@ export const handler = async (event) => {
   const userId = "user123"; // TODO: Cognito 또는 JWT에서 사용자 ID 추출
 
   try {
-    const normalizedPostId = String(parseInt(postId)).padStart(5, '0');
-
-    const getCommand = new QueryCommand({
+    // 게시글 조회
+    const queryCommand = new QueryCommand({
       TableName: process.env.POSTS_TABLE,
       KeyConditionExpression: "PK = :pk",
       ExpressionAttributeValues: {
-        ":pk": `POST#${normalizedPostId}`
+        ":pk": `POST#${postId}`
       }
     });
 
-    const { Items } = await dynamodb.send(getCommand);
+    const { Items } = await dynamodb.send(queryCommand);
 
     if (!Items || Items.length === 0) {
       return {
@@ -57,32 +56,35 @@ export const handler = async (event) => {
     }
 
     // 댓글 업데이트
-    post.comments[commentIndex] = {
+    const updatedComment = {
       ...post.comments[commentIndex],
-      content,
+      content: content,
       updatedAt: new Date().toISOString()
     };
 
-    // 낙관적 락킹을 통한 동시성 제어
-    const updateCommand = new PutCommand({
+    const updateCommand = new UpdateCommand({
       TableName: process.env.POSTS_TABLE,
-      Item: post,
-      ConditionExpression: "attribute_exists(PK) AND attribute_exists(SK)",
-      ReturnValues: "ALL_OLD"
+      Key: {
+        PK: post.PK,
+        SK: post.SK
+      },
+      UpdateExpression: "SET comments[" + commentIndex + "] = :updatedComment",
+      ExpressionAttributeValues: {
+        ":updatedComment": updatedComment
+      },
+      ReturnValues: "ALL_NEW"
     });
 
-    await dynamodb.send(updateCommand);
+    const { Attributes } = await dynamodb.send(updateCommand);
 
     return {
       statusCode: 200,
       headers: {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Cache-Control': 'no-cache' // 캐시 무효화
+        'Access-Control-Allow-Origin': '*'
       },
-      body: JSON.stringify(post.comments[commentIndex])
+      body: JSON.stringify(updatedComment)
     };
-
   } catch (error) {
     console.error('Error in updateComment:', {
       error,
@@ -91,17 +93,6 @@ export const handler = async (event) => {
       userId,
       timestamp: new Date().toISOString()
     });
-
-    if (error.name === 'ConditionalCheckFailedException') {
-      return {
-        statusCode: 409,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
-        },
-        body: JSON.stringify({ error: 'Comment was modified by another request' })
-      };
-    }
 
     return {
       statusCode: 500,

@@ -2,32 +2,62 @@ import { useState, useEffect } from 'react';
 import CategoryFilter from '../components/post/CategoryFilter';
 import SearchBar from '../components/post/SearchBar';
 import PostCard from '../components/post/PostCard';
+import TrendingPosts from '../components/post/TrendingPosts';
+import PopularTags from '@components/tags/PopularTags';
+import { useSearchParams } from 'react-router-dom';
 
 function HomePage() {
-  const [posts, setPosts] = useState([]);
+  const [posts, setPosts] = useState([]);  // 빈 배열로 초기화
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedCategory, setSelectedCategory] = useState('ALL');
+  const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
 
-  useEffect(() => {
-    console.log('HomePage useEffect running'); // 디버깅용 로그 추가
+  const selectedCategory = searchParams.get('category') || 'ALL';
 
+  const searchPosts = async (query, category) => {
+    const params = new URLSearchParams();
+    if (query) params.append('query', query);
+    if (category) params.append('category', category);
+
+    const response = await fetch(`/api/posts/search?${params}`);
+    if (!response.ok) throw new Error('Search failed');
+
+    return response.json();
+  };
+
+  useEffect(() => {
     const fetchPosts = async () => {
       try {
         setLoading(true);
-        console.log('Fetching posts...'); 
-        const response = await fetch('/api/posts');
-        console.log('Response:', response); 
+        const timestamp = new Date().getTime();
+
+        let response;
+        if (searchQuery) {
+          // 검색어가 있는 경우 검색 API 사용
+          const response = await searchPosts(searchQuery, selectedCategory);
+          setPosts(response.posts || []); // response.posts가 없는 경우 빈 배열 사용
+          return;
+        }
+
+        // 검색어가 없는 경우 일반 목록 API 사용
+        const url = selectedCategory === 'ALL'
+            ? `/api/posts?_=${timestamp}`
+            : `/api/posts?category=${selectedCategory}&_=${timestamp}`;
+
+        response = await fetch(url, {
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          }
+        });
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
-        const data = await response.json();
-        console.log('Fetched data:', data);
 
-        // 중복 제거를 위한 Set 사용
+        const data = await response.json();
+
         const seen = new Set();
         const uniquePosts = data.filter(post => {
           const duplicate = seen.has(post.PK);
@@ -44,26 +74,76 @@ function HomePage() {
       }
     };
 
-    fetchPosts();
-  }, []);
+    // 디바운스 처리로 성능 최적화
+    const timeoutId = setTimeout(() => {
+      fetchPosts();
+    }, 300); // 300ms 디바운스
 
-  if (loading) return <div>Loading posts...</div>;
-  if (error) return <div>Error: {error}</div>;
-  if (!posts.length) return <div>No posts found</div>;
+    return () => clearTimeout(timeoutId);
+  }, [selectedCategory, searchQuery]);
 
-  const trendingPosts = [
-    { id: 1, title: "The Impact of AI on Education", views: "3.2k" },
-    { id: 2, title: "Remote Learning Best Practices", views: "2.8k" },
-    { id: 3, title: "Digital Assessment Strategies", views: "2.1k" }
-  ];
+  const handleCategoryChange = (category) => {
+    setSearchParams({ category });
+  };
 
-  const popularTags = [
-    "education",
-    "learning",
-    "teaching",
-    "edtech",
-    "online"
-  ];
+  const handleSearch = (query) => {
+    setSearchQuery(query);
+  };
+
+  const renderPosts = () => {
+    if (loading) {
+      return (
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+          </div>
+      );
+    }
+
+    if (error) {
+      return (
+          <div className="text-red-500 text-center p-4 bg-white rounded-xl shadow-sm">
+            Error: {error}
+          </div>
+      );
+    }
+
+    if (!posts || posts.length === 0) {
+      return (
+          <div className="bg-white rounded-xl shadow-sm p-8 text-center">
+            <p className="text-gray-500">
+              {searchQuery
+                  ? '검색 결과가 없습니다.'
+                  : '이 카테고리에는 아직 게시글이 없습니다.'}
+            </p>
+            <p className="text-gray-400 mt-2">첫 게시글을 작성해보세요!</p>
+          </div>
+      );
+    }
+
+    return (
+        <div className="space-y-6">
+          {posts.map(post => (
+              <PostCard
+                  key={`${post.PK}-${post.metadata.createdAt}`}
+                  post={{
+                    id: post.PK,
+                    title: post.title,
+                    excerpt: post.content,
+                    author: post.author,
+                    createdAt: new Date(post.metadata.createdAt).toLocaleDateString(),
+                    tags: post.tags || [],
+                    metadata: {
+                      views: post.metadata?.views || 0,
+                      likes: post.metadata?.likes || 0,
+                      commentsCount: post.metadata?.commentsCount || 0
+                    }
+                  }}
+                  to={`/posts/${post.PK.split('#')[1]}`}
+              />
+          ))}
+        </div>
+    );
+  };
 
   return (
       <div className="flex space-x-8">
@@ -71,65 +151,22 @@ function HomePage() {
           <div className="flex items-center mb-6">
             <CategoryFilter
                 selectedCategory={selectedCategory}
-                onCategoryChange={setSelectedCategory}
+                onCategoryChange={handleCategoryChange}
             />
           </div>
           <SearchBar
               value={searchQuery}
-              onChange={setSearchQuery}
+              onChange={handleSearch}
           />
-          <div className="space-y-6">
-            {posts.map(post => (
-                <PostCard key={`${post.PK}-${post.metadata.createdAt}`} post={{
-                  id: post.PK,
-                  title: post.title,
-                  excerpt: post.content,
-                  author: post.author,
-                  createdAt: new Date(post.metadata.createdAt).toLocaleDateString(),
-                  tags: post.tags || [],
-                  metadata: {
-                    views: post.metadata?.views || 0,
-                    likes: post.metadata?.likes || 0,
-                    commentsCount: post.metadata?.commentsCount || 0
-                  }
-                }} to={`/posts/${post.PK.split('#')[1]}`}/>
-            ))}
-          </div>
+          {renderPosts()}
         </main>
 
         <aside className="w-80">
-          <div className="bg-white shadow-sm hover:shadow-md transition-shadow duration-200 rounded-xl p-6">
-            <h3 className="text-lg font-medium text-gray-900">Popular Tags</h3>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {popularTags.map((tag, index) => (
-                  <button
-                      key={tag}
-                      className={`px-3 py-1 rounded-full text-sm font-medium ${
-                          index === 0
-                              ? 'bg-black text-white hover:bg-gray-800'
-                              : 'bg-black bg-opacity-5 text-gray-900 hover:bg-opacity-10'
-                      } transition-colors duration-200`}
-                  >
-                    #{tag}
-                  </button>
-              ))}
-            </div>
-          </div>
-
+          <PopularTags />
           <div className="mt-6 bg-white shadow-sm hover:shadow-md transition-shadow duration-200 rounded-xl p-6">
             <h3 className="text-lg font-medium text-gray-900">Trending Posts</h3>
-            <div className="mt-4 space-y-4">
-              {trendingPosts.map((post, index) => (
-                  <div key={post.id} className="flex items-start space-x-3">
-                <span className="flex-shrink-0 text-custom font-medium">
-                  {String(index + 1).padStart(2, '0')}
-                </span>
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-900">{post.title}</h4>
-                      <p className="text-sm text-gray-500">{post.views} views</p>
-                    </div>
-                  </div>
-              ))}
+            <div className="mt-4">
+              <TrendingPosts />
             </div>
           </div>
         </aside>
@@ -137,4 +174,4 @@ function HomePage() {
   );
 }
 
-export default HomePage; 
+export default HomePage;

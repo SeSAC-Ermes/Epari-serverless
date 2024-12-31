@@ -1,12 +1,14 @@
-import { GetCommand, UpdateCommand, ScanCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
+import { QueryCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { dynamodb } from "../../lib/dynamodb.mjs";
 
+
+// 단일 조회
 export const handler = async (event) => {
   try {
     const { postId } = event.pathParameters;
-    console.log('Fetching post with ID:', postId);
-    
-    const command = new QueryCommand({
+
+    // 게시글 조회
+    const queryCommand = new QueryCommand({
       TableName: process.env.POSTS_TABLE,
       KeyConditionExpression: "PK = :pk",
       ExpressionAttributeValues: {
@@ -14,8 +16,7 @@ export const handler = async (event) => {
       }
     });
 
-    const { Items } = await dynamodb.send(command);
-    console.log('DynamoDB response:', Items);
+    const { Items } = await dynamodb.send(queryCommand);
 
     if (!Items || Items.length === 0) {
       return {
@@ -28,22 +29,27 @@ export const handler = async (event) => {
       };
     }
 
-    const Item = Items[0];
+    const post = Items[0];
 
-    await dynamodb.send(new UpdateCommand({
+    // 조회수 증가
+    const updateCommand = new UpdateCommand({
       TableName: process.env.POSTS_TABLE,
       Key: {
-        PK: Item.PK,
-        SK: Item.SK
+        PK: post.PK,
+        SK: post.SK
       },
-      UpdateExpression: "SET metadata.#views = metadata.#views + :inc",
+      UpdateExpression: "SET metadata.#v = if_not_exists(metadata.#v, :zero) + :inc",
       ExpressionAttributeNames: {
-        "#views": "views"
+        "#v": "views"
       },
       ExpressionAttributeValues: {
-        ":inc": 1
-      }
-    }));
+        ":inc": 1,
+        ":zero": 0
+      },
+      ReturnValues: "ALL_NEW"
+    });
+
+    await dynamodb.send(updateCommand);
 
     return {
       statusCode: 200,
@@ -51,7 +57,7 @@ export const handler = async (event) => {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*'
       },
-      body: JSON.stringify(Item)
+      body: JSON.stringify(post)
     };
   } catch (error) {
     console.error('Error in getPost:', error);

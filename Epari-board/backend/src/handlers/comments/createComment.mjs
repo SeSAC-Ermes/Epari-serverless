@@ -12,7 +12,7 @@ export const handler = async (event) => {
       return {
         statusCode: 400,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           error: 'Missing required fields',
           required: ['content', 'author.id', 'author.name']
         })
@@ -22,7 +22,7 @@ export const handler = async (event) => {
     const commentId = uuidv4();
     const timestamp = new Date().toISOString();
 
-    // 먼저 게시글 존재 여부 확인
+    // 게시글 조회
     const queryCommand = new QueryCommand({
       TableName: process.env.POSTS_TABLE,
       KeyConditionExpression: "PK = :pk",
@@ -40,39 +40,35 @@ export const handler = async (event) => {
       };
     }
 
-    // 댓글 데이터 생성
-    const commentData = {
-      PK: `POST#${postId}`,
-      SK: `COMMENT#${commentId}`,
-      GSI1PK: `USER#${comment.author.id}`,
-      GSI1SK: `COMMENT#${commentId}`,
+    const post = Items[0];
+
+    // 새 댓글 데이터
+    const newComment = {
       id: commentId,
       content: comment.content,
       author: comment.author,
-      metadata: {
-        createdAt: timestamp,
-        updatedAt: timestamp
-      }
+      createdAt: timestamp,
+      updatedAt: timestamp
     };
 
-    // 댓글 저장
-    await dynamodb.send(new PutCommand({
-      TableName: process.env.POSTS_TABLE,
-      Item: commentData
-    }));
-
-    // 게시글의 댓글 수 증가
-    await dynamodb.send(new UpdateCommand({
+    // 게시글 업데이트 (comments 배열에 새 댓글 추가)
+    const updateCommand = new UpdateCommand({
       TableName: process.env.POSTS_TABLE,
       Key: {
-        PK: Items[0].PK,
-        SK: Items[0].SK
+        PK: post.PK,
+        SK: post.SK
       },
-      UpdateExpression: "SET metadata.commentsCount = metadata.commentsCount + :inc",
+      UpdateExpression: "SET comments = list_append(if_not_exists(comments, :empty_list), :newComment), metadata.commentsCount = if_not_exists(metadata.commentsCount, :zero) + :one",
       ExpressionAttributeValues: {
-        ":inc": 1
-      }
-    }));
+        ":empty_list": [],
+        ":newComment": [newComment],
+        ":zero": 0,
+        ":one": 1
+      },
+      ReturnValues: "ALL_NEW"
+    });
+
+    const { Attributes } = await dynamodb.send(updateCommand);
 
     return {
       statusCode: 201,
@@ -80,12 +76,11 @@ export const handler = async (event) => {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*'
       },
-      body: JSON.stringify(commentData)
+      body: JSON.stringify(newComment)
     };
   } catch (error) {
     console.error('Error in createComment:', error);
 
-    // ConditionalCheckFailedException 처리
     if (error.name === 'ConditionalCheckFailedException') {
       return {
         statusCode: 409,

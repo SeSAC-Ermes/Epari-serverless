@@ -37,7 +37,6 @@ export const handler = async (event) => {
     console.log('Saving post:', {
       PK: `POST#${postId}`,
       SK: 'METADATA',
-      // ... 다른 필드들
     });
 
     await docClient.send(new PutCommand({

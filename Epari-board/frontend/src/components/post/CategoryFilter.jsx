@@ -1,8 +1,7 @@
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 function CategoryFilter({ selectedCategory, onCategoryChange }) {
   const navigate = useNavigate();
-  const location = useLocation();
 
   const categories = [
     { value: 'ALL', label: '전체' },
@@ -16,34 +15,33 @@ function CategoryFilter({ selectedCategory, onCategoryChange }) {
 
   const handleCategoryChange = (category) => {
     onCategoryChange(category);
-    navigate(`/?category=${category}`);
   };
 
   return (
-    <div className="flex items-center justify-between w-full">
-      <div className="flex space-x-4">
-        {categories.map(category => (
-          <button
-            key={category.value}
-            onClick={() => handleCategoryChange(category.value)}
-            className={`px-4 py-2 text-sm font-medium ${
-              selectedCategory === category.value
-                ? 'text-black border-b-2 border-black'
-                : 'text-gray-500 hover:text-black hover:border-b-2 hover:border-black transition-colors duration-200'
-            }`}
-          >
-            {category.label}
-          </button>
-        ))}
+      <div className="flex items-center justify-between w-full">
+        <div className="flex space-x-4">
+          {categories.map(category => (
+              <button
+                  key={category.value}
+                  onClick={() => handleCategoryChange(category.value)}
+                  className={`px-4 py-2 text-sm font-medium transition-colors duration-200 ${
+                      selectedCategory === category.value
+                          ? 'text-black border-b-2 border-black'
+                          : 'text-gray-500 hover:text-black hover:border-b-2 hover:border-black'
+                  }`}
+              >
+                {category.label}
+              </button>
+          ))}
+        </div>
+        <button
+            onClick={() => navigate('/write')}
+            className="px-4 py-2 text-sm font-medium bg-black text-white rounded-full hover:bg-gray-800 transition-colors duration-200"
+        >
+          + New Post
+        </button>
       </div>
-      <button 
-        onClick={() => navigate('/write')}
-        className="px-4 py-2 text-sm font-medium bg-black text-white rounded-full hover:bg-gray-800 transition-colors duration-200"
-      >
-        + New Post
-      </button>
-    </div>
   );
 }
 
-export default CategoryFilter; 
+export default CategoryFilter;

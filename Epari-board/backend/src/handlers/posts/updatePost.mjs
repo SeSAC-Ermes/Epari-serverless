@@ -7,7 +7,7 @@ export const handler = async (event) => {
     const updates = JSON.parse(event.body);
     const timestamp = new Date().toISOString();
 
-    // 먼저 게시글 조회
+    // 게시글 조회
     const queryCommand = new QueryCommand({
       TableName: process.env.POSTS_TABLE,
       KeyConditionExpression: "PK = :pk",
@@ -34,11 +34,12 @@ export const handler = async (event) => {
         PK: post.PK,
         SK: post.SK
       },
-      UpdateExpression: "SET title = :title, content = :content, metadata.updatedAt = :updatedAt",
+      UpdateExpression: "SET title = :title, content = :content, metadata.updatedAt = :updatedAt, tags = :tags",
       ExpressionAttributeValues: {
         ":title": updates.title,
         ":content": updates.content,
-        ":updatedAt": timestamp
+        ":updatedAt": timestamp,
+        ":tags": updates.tags || []
       },
       ReturnValues: "ALL_NEW"
     });

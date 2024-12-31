@@ -1,14 +1,30 @@
 import { ScanCommand } from "@aws-sdk/lib-dynamodb";
 import { dynamodb } from "../../lib/dynamodb.mjs";
 
+// 전체 조회
 export const handler = async (event) => {
   try {
+    const { category } = event.queryStringParameters || {};
+
+    let filterExpression = "begins_with(PK, :pk)";
+    let expressionAttributeValues = {
+      ":pk": "POST#"
+    };
+
+    if (category && category !== 'ALL') {
+      if (category === 'MY') {
+        filterExpression += " AND GSI1PK = :userId";
+        expressionAttributeValues[":userId"] = "USER#user123";
+      } else {
+        filterExpression += " AND category = :category";
+        expressionAttributeValues[":category"] = category;
+      }
+    }
+
     const command = new ScanCommand({
       TableName: process.env.POSTS_TABLE,
-      FilterExpression: "begins_with(PK, :pk)",
-      ExpressionAttributeValues: {
-        ":pk": "POST#"
-      }
+      FilterExpression: filterExpression,
+      ExpressionAttributeValues: expressionAttributeValues
     });
 
     const { Items } = await dynamodb.send(command);
@@ -35,7 +51,7 @@ export const handler = async (event) => {
       body: JSON.stringify(posts)
     };
   } catch (error) {
-    console.error('Error in getPosts:', error);
+    console.error('Error in getPost:', error);
     return {
       statusCode: 500,
       headers: {
